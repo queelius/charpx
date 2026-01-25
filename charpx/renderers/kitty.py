@@ -142,15 +142,20 @@ class KittyRenderer:
     Attributes:
         format: Output format - "png" (compressed), "rgb", or "rgba".
         compression: Use zlib compression for raw formats (default True).
+        columns: Display width in terminal columns (None = native pixel size).
+        rows: Display height in terminal rows (None = native pixel size).
 
     Example:
         >>> from charpx import Canvas, kitty
         >>> canvas = Canvas(np.random.rand(48, 80))
         >>> canvas.out(kitty)  # In supported terminal
+        >>> canvas.out(kitty(columns=80))  # Scale to 80 columns wide
     """
 
     format: Literal["png", "rgb", "rgba"] = "png"
     compression: bool = True
+    columns: int | None = None
+    rows: int | None = None
 
     @property
     def cell_width(self) -> int:
@@ -166,12 +171,16 @@ class KittyRenderer:
         self,
         format: Literal["png", "rgb", "rgba"] | None = None,
         compression: bool | None = None,
+        columns: int | None = None,
+        rows: int | None = None,
     ) -> KittyRenderer:
         """Create a new renderer with modified options.
 
         Args:
             format: New format (None to keep current)
             compression: New compression setting (None to keep current)
+            columns: Display width in terminal columns (None to keep current)
+            rows: Display height in terminal rows (None to keep current)
 
         Returns:
             New KittyRenderer with updated settings.
@@ -179,6 +188,8 @@ class KittyRenderer:
         return KittyRenderer(
             format=format if format is not None else self.format,
             compression=compression if compression is not None else self.compression,
+            columns=columns if columns is not None else self.columns,
+            rows=rows if rows is not None else self.rows,
         )
 
     def render(
@@ -250,6 +261,12 @@ class KittyRenderer:
                 params = f"a=T,f={fmt_code},o=z,s={w},v={h}"
             else:
                 params = f"a=T,f={fmt_code},s={w},v={h}"
+
+        # Add display size parameters (c=columns, r=rows)
+        if self.columns is not None:
+            params += f",c={self.columns}"
+        if self.rows is not None:
+            params += f",r={self.rows}"
 
         # Encode as base64
         b64_data = base64.b64encode(data).decode("ascii")

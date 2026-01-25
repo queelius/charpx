@@ -49,5 +49,5 @@ class TestCLIDelegation:
             # No args provided, so argparse exits
             with patch("sys.argv", ["charpx"]):
                 main()
-        # Exit code 0 for help or 2 for missing args
-        assert exc_info.value.code in (0, 2, None)
+        # Exit code 0 for help, 1 for no images, 2 for missing required args
+        assert exc_info.value.code in (0, 1, 2, None)

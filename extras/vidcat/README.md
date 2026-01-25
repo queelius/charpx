@@ -62,25 +62,43 @@ vidcat video.mp4 -o frames.txt        # Save to file
 - Video: mp4, webm, mkv, avi, mov
 - Animation: gif, apng, webp (animated)
 
+### Asciinema Export
+
+Export video as an asciinema recording (.cast file):
+
+```bash
+# Basic export
+vidcat video.mp4 --asciinema output.cast
+
+# Control playback speed
+vidcat video.mp4 --asciinema output.cast --fps 15
+
+# With title
+vidcat video.mp4 --asciinema output.cast --title "My Video"
+
+# Play the recording
+asciinema play output.cast
+```
+
 ### Claude Code Skill
 
 Install the skill to help Claude Code use vidcat:
 
 ```bash
 # Install to current project
-vidcat skill --install --local
+vidcat --skill-install --local
 
 # Install globally
-vidcat skill --install --global
+vidcat --skill-install --global
 
 # Show skill content
-vidcat skill --show
+vidcat --skill-show
 ```
 
 ### Python API
 
 ```python
-from vidcat import view, vidcat
+from vidcat import view, vidcat, to_asciinema
 
 # Quick view with defaults
 view("animation.gif")
@@ -90,6 +108,9 @@ vidcat("video.mp4", frames="1-10", renderer="braille", max_frames=20)
 
 # Extract every 30 seconds
 vidcat("video.mp4", every="30s", renderer="quadrants")
+
+# Export to asciinema format
+to_asciinema("video.mp4", "output.cast", fps=15, renderer="braille")
 ```
 
 ## Requirements

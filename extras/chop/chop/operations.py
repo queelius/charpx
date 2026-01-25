@@ -9,9 +9,7 @@ import re
 from typing import TYPE_CHECKING
 
 import numpy as np
-from PIL import Image
-
-from charpx import preprocess
+from PIL import Image, ImageColor
 
 if TYPE_CHECKING:
     pass
@@ -154,128 +152,465 @@ def op_flip(image: Image.Image, direction: str) -> Image.Image:
         raise ValueError(f"direction must be 'h' or 'v', got {direction!r}")
 
 
-def _apply_preprocess(
+# =============================================================================
+# Padding and border operations
+# =============================================================================
+
+
+def _parse_color(color: str) -> tuple[int, int, int, int]:
+    """Parse color string to RGBA tuple.
+
+    Args:
+        color: Color name, hex (#RGB, #RRGGBB), or "transparent"
+
+    Returns:
+        (R, G, B, A) tuple with values 0-255
+    """
+    if color.lower() == "transparent":
+        return (0, 0, 0, 0)
+
+    try:
+        rgb = ImageColor.getrgb(color)
+        if len(rgb) == 3:
+            return (*rgb, 255)
+        return rgb
+    except ValueError:
+        raise ValueError(f"Invalid color: {color}")
+
+
+def op_pad(
     image: Image.Image,
-    func,
-    **kwargs,
+    top: int,
+    right: int | None = None,
+    bottom: int | None = None,
+    left: int | None = None,
+    color: str = "transparent",
 ) -> Image.Image:
-    """Apply a charpx preprocess function to a PIL Image.
-
-    Args:
-        image: Input image (RGBA)
-        func: Preprocess function that takes bitmap array
-        **kwargs: Arguments to pass to func
-
-    Returns:
-        Processed image
-    """
-    # Convert to grayscale bitmap
-    gray = image.convert("L")
-    bitmap = np.array(gray, dtype=np.float32) / 255.0
-
-    # Apply function
-    result = func(bitmap, **kwargs)
-
-    # Convert back to image
-    result_uint8 = (np.clip(result, 0, 1) * 255).astype(np.uint8)
-    result_image = Image.fromarray(result_uint8, mode="L")
-
-    # Preserve color if original was color
-    if image.mode == "RGBA":
-        # Use processed as luminance, preserve original color hue
-        original_rgb = np.array(image.convert("RGB"), dtype=np.float32) / 255.0
-        original_lum = (
-            0.299 * original_rgb[:, :, 0]
-            + 0.587 * original_rgb[:, :, 1]
-            + 0.114 * original_rgb[:, :, 2]
-        )
-
-        # Avoid division by zero
-        original_lum = np.maximum(original_lum, 1e-6)
-
-        # Scale colors by luminance ratio
-        scale = result / original_lum
-        new_rgb = original_rgb * scale[:, :, np.newaxis]
-        new_rgb = np.clip(new_rgb, 0, 1)
-
-        # Convert back
-        new_rgb_uint8 = (new_rgb * 255).astype(np.uint8)
-        return Image.fromarray(new_rgb_uint8, mode="RGB").convert("RGBA")
-
-    return result_image.convert("RGBA")
-
-
-def op_dither(image: Image.Image, threshold: float = 0.5) -> Image.Image:
-    """Apply Floyd-Steinberg dithering.
+    """Add padding around image.
 
     Args:
         image: Input image
-        threshold: Dithering threshold (0.0-1.0)
+        top: Top padding (or uniform if only arg)
+        right: Right padding (or horizontal if only top+right given)
+        bottom: Bottom padding
+        left: Left padding
+        color: Padding color (name, hex, or "transparent")
+
+    Supports:
+        - pad(10): uniform 10px padding
+        - pad(10, 20): 10 top/bottom, 20 left/right
+        - pad(10, 20, 30, 40): top, right, bottom, left (CSS order)
 
     Returns:
-        Dithered image
+        Padded image
     """
-    return _apply_preprocess(image, preprocess.floyd_steinberg, threshold=threshold)
+    # Parse padding values (CSS-style)
+    if right is None:
+        # Uniform padding
+        t = r = b = l = top
+    elif bottom is None:
+        # Vertical, horizontal
+        t = b = top
+        r = l = right
+    else:
+        # All four specified
+        t, r, b, l = top, right, bottom, left or right
+
+    w, h = image.size
+    new_w = w + l + r
+    new_h = h + t + b
+
+    fill_color = _parse_color(color)
+    result = Image.new("RGBA", (new_w, new_h), fill_color)
+    result.paste(image, (l, t))
+
+    return result
 
 
-def op_invert(image: Image.Image) -> Image.Image:
-    """Invert image.
+def op_border(
+    image: Image.Image,
+    width: int,
+    color: str = "black",
+) -> Image.Image:
+    """Add colored border around image.
 
     Args:
         image: Input image
+        width: Border width in pixels
+        color: Border color (name or hex)
 
     Returns:
-        Inverted image
+        Image with border
     """
-    return _apply_preprocess(image, preprocess.invert)
+    fill_color = _parse_color(color)
+    w, h = image.size
+    new_w = w + width * 2
+    new_h = h + width * 2
+
+    result = Image.new("RGBA", (new_w, new_h), fill_color)
+    result.paste(image, (width, width))
+
+    return result
 
 
-def op_sharpen(image: Image.Image, strength: float = 1.0) -> Image.Image:
-    """Sharpen image.
+# =============================================================================
+# Fit and fill operations
+# =============================================================================
+
+
+def op_fit(image: Image.Image, size_str: str) -> Image.Image:
+    """Fit image within bounds, preserving aspect ratio.
+
+    The image is scaled down (if needed) to fit entirely within
+    the specified dimensions. The result may be smaller than
+    the target in one dimension.
 
     Args:
         image: Input image
-        strength: Sharpening strength
+        size_str: Target size as "WxH" (e.g., "800x600")
 
     Returns:
-        Sharpened image
+        Fitted image (may be smaller than target in one dimension)
     """
-    return _apply_preprocess(image, preprocess.sharpen, strength=strength)
+    if "x" not in size_str.lower():
+        raise ValueError(f"fit requires WxH format, got: {size_str}")
+
+    parts = size_str.lower().split("x")
+    target_w, target_h = int(parts[0]), int(parts[1])
+    w, h = image.size
+
+    # Calculate scale to fit within bounds
+    scale = min(target_w / w, target_h / h)
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+
+    return image.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
 
-def op_contrast(image: Image.Image) -> Image.Image:
-    """Auto-contrast image.
+def op_fill(image: Image.Image, size_str: str) -> Image.Image:
+    """Fill bounds completely, cropping excess (center crop).
+
+    The image is scaled to completely fill the specified dimensions,
+    then center-cropped to exact size.
 
     Args:
         image: Input image
+        size_str: Target size as "WxH" (e.g., "800x600")
 
     Returns:
-        Contrast-stretched image
+        Filled and cropped image (exact target size)
     """
-    return _apply_preprocess(image, preprocess.auto_contrast)
+    if "x" not in size_str.lower():
+        raise ValueError(f"fill requires WxH format, got: {size_str}")
+
+    parts = size_str.lower().split("x")
+    target_w, target_h = int(parts[0]), int(parts[1])
+    w, h = image.size
+
+    # Calculate scale to fill bounds completely
+    scale = max(target_w / w, target_h / h)
+    scaled_w = int(w * scale)
+    scaled_h = int(h * scale)
+
+    # Scale up
+    scaled = image.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS)
+
+    # Center crop to exact target size
+    left = (scaled_w - target_w) // 2
+    top = (scaled_h - target_h) // 2
+    return scaled.crop((left, top, left + target_w, top + target_h))
 
 
-def op_gamma(image: Image.Image, gamma: float) -> Image.Image:
-    """Apply gamma correction.
+# =============================================================================
+# Composition operations
+# =============================================================================
+
+
+def _align_offset(
+    size1: int, size2: int, align: str, is_horizontal: bool
+) -> tuple[int, int]:
+    """Calculate offsets for aligning two dimensions.
 
     Args:
-        image: Input image
-        gamma: Gamma value (>1 darkens, <1 brightens)
+        size1: First size (target)
+        size2: Second size (to align)
+        align: Alignment string (top/center/bottom or left/center/right)
+        is_horizontal: True for horizontal alignment (left/center/right)
 
     Returns:
-        Gamma-corrected image
+        (offset1, offset2) - offsets for each image
     """
-    return _apply_preprocess(image, preprocess.gamma_correct, gamma=gamma)
+    if size1 == size2:
+        return (0, 0)
+
+    max_size = max(size1, size2)
+
+    if is_horizontal:
+        # left/center/right
+        if align == "left":
+            return (0, 0)
+        elif align == "right":
+            return (max_size - size1, max_size - size2)
+        else:  # center
+            return ((max_size - size1) // 2, (max_size - size2) // 2)
+    else:
+        # top/center/bottom
+        if align == "top":
+            return (0, 0)
+        elif align == "bottom":
+            return (max_size - size1, max_size - size2)
+        else:  # center
+            return ((max_size - size1) // 2, (max_size - size2) // 2)
 
 
-def op_threshold(image: Image.Image, level: float) -> Image.Image:
-    """Apply binary threshold.
+def op_hstack(
+    image: Image.Image, other: Image.Image, align: str = "center"
+) -> Image.Image:
+    """Stack two images horizontally (side by side).
 
     Args:
-        image: Input image
-        level: Threshold level (0.0-1.0)
+        image: Left image
+        other: Right image
+        align: Vertical alignment (top, center, bottom)
 
     Returns:
-        Thresholded image
+        Combined image
     """
-    return _apply_preprocess(image, preprocess.threshold, level=level)
+    w1, h1 = image.size
+    w2, h2 = other.size
+
+    # Calculate output dimensions
+    out_width = w1 + w2
+    out_height = max(h1, h2)
+
+    # Calculate vertical offsets for alignment
+    offset1, offset2 = _align_offset(h1, h2, align, is_horizontal=False)
+
+    # Create output image with transparency
+    result = Image.new("RGBA", (out_width, out_height), (0, 0, 0, 0))
+
+    # Paste images
+    result.paste(image, (0, offset1))
+    result.paste(other, (w1, offset2))
+
+    return result
+
+
+def op_vstack(
+    image: Image.Image, other: Image.Image, align: str = "center"
+) -> Image.Image:
+    """Stack two images vertically (one above the other).
+
+    Args:
+        image: Top image
+        other: Bottom image
+        align: Horizontal alignment (left, center, right)
+
+    Returns:
+        Combined image
+    """
+    w1, h1 = image.size
+    w2, h2 = other.size
+
+    # Calculate output dimensions
+    out_width = max(w1, w2)
+    out_height = h1 + h2
+
+    # Calculate horizontal offsets for alignment
+    offset1, offset2 = _align_offset(w1, w2, align, is_horizontal=True)
+
+    # Create output image with transparency
+    result = Image.new("RGBA", (out_width, out_height), (0, 0, 0, 0))
+
+    # Paste images
+    result.paste(image, (offset1, 0))
+    result.paste(other, (offset2, h1))
+
+    return result
+
+
+def op_overlay(
+    image: Image.Image,
+    overlay: Image.Image,
+    x: int,
+    y: int,
+    opacity: float = 1.0,
+    paste: bool = False,
+) -> Image.Image:
+    """Overlay an image on top of another.
+
+    Args:
+        image: Base image
+        overlay: Image to overlay
+        x: X position for overlay
+        y: Y position for overlay
+        opacity: Opacity multiplier (0.0-1.0)
+        paste: If True, hard paste without alpha blending
+
+    Returns:
+        Combined image
+    """
+    result = image.copy()
+
+    # Apply opacity if needed
+    if opacity < 1.0 and overlay.mode == "RGBA":
+        # Modify alpha channel
+        r, g, b, a = overlay.split()
+        a = a.point(lambda p: int(p * opacity))
+        overlay = Image.merge("RGBA", (r, g, b, a))
+
+    if paste:
+        # Hard paste (no blending)
+        result.paste(overlay, (x, y))
+    else:
+        # Alpha composite
+        # Create a full-size overlay layer
+        layer = Image.new("RGBA", result.size, (0, 0, 0, 0))
+        layer.paste(overlay, (x, y))
+        result = Image.alpha_composite(result, layer)
+
+    return result
+
+
+def op_tile(image: Image.Image, cols: int, rows: int) -> Image.Image:
+    """Tile an image NxM times.
+
+    Args:
+        image: Image to tile
+        cols: Number of columns
+        rows: Number of rows
+
+    Returns:
+        Tiled image
+    """
+    w, h = image.size
+    result = Image.new("RGBA", (w * cols, h * rows), (0, 0, 0, 0))
+
+    for row in range(rows):
+        for col in range(cols):
+            result.paste(image, (col * w, row * h))
+
+    return result
+
+
+def op_grid(
+    image: Image.Image, others: list[Image.Image], cols: int = 2
+) -> Image.Image:
+    """Arrange multiple images in a grid.
+
+    The first image determines the cell size. All other images are
+    resized to match.
+
+    Args:
+        image: First image (determines cell size)
+        others: Additional images
+        cols: Number of columns
+
+    Returns:
+        Grid image
+    """
+    all_images = [image] + others
+    cell_w, cell_h = image.size
+
+    # Calculate grid dimensions
+    total = len(all_images)
+    rows = (total + cols - 1) // cols  # Ceiling division
+
+    result = Image.new("RGBA", (cell_w * cols, cell_h * rows), (0, 0, 0, 0))
+
+    for i, img in enumerate(all_images):
+        # Resize to cell size if needed
+        if img.size != (cell_w, cell_h):
+            img = img.resize((cell_w, cell_h), Image.Resampling.LANCZOS)
+
+        row = i // cols
+        col = i % cols
+        result.paste(img, (col * cell_w, row * cell_h))
+
+    return result
+
+
+# =============================================================================
+# Operations Registry
+# =============================================================================
+
+
+# Map operation names to their functions
+# Note: Composition operations (hstack, vstack, overlay, grid) require
+# additional images to be loaded, so they're handled specially in apply_operation()
+OPERATIONS: dict[str, callable] = {
+    # Geometric
+    "resize": op_resize,
+    "crop": op_crop,
+    "rotate": op_rotate,
+    "flip": op_flip,
+    "fit": op_fit,
+    "fill": op_fill,
+    # Padding/border
+    "pad": op_pad,
+    "border": op_border,
+    # Composition
+    "tile": op_tile,
+}
+
+
+def apply_operation(
+    image: Image.Image, op_name: str, *args, **kwargs
+) -> Image.Image:
+    """Apply a named operation to an image.
+
+    Args:
+        image: Input PIL Image
+        op_name: Operation name (e.g., "resize", "dither")
+        *args: Positional arguments for the operation
+        **kwargs: Keyword arguments for the operation
+
+    Returns:
+        Processed PIL Image
+
+    Raises:
+        ValueError: If operation name is unknown
+    """
+    # Handle composition operations that need to load additional images
+    if op_name == "hstack":
+        from chop.pipeline import load_image
+        other = load_image(args[0])
+        align = kwargs.get("align", "center")
+        return op_hstack(image, other, align=align)
+
+    if op_name == "vstack":
+        from chop.pipeline import load_image
+        other = load_image(args[0])
+        align = kwargs.get("align", "center")
+        return op_vstack(image, other, align=align)
+
+    if op_name == "overlay":
+        from chop.pipeline import load_image
+        overlay_img = load_image(args[0])
+        x = args[1] if len(args) > 1 else kwargs.get("x", 0)
+        y = args[2] if len(args) > 2 else kwargs.get("y", 0)
+        opacity = kwargs.get("opacity", 1.0)
+        paste = kwargs.get("paste", False)
+        return op_overlay(image, overlay_img, x=x, y=y, opacity=opacity, paste=paste)
+
+    if op_name == "grid":
+        from chop.pipeline import load_image
+        paths = args[0] if args else kwargs.get("paths", [])
+        others = [load_image(p) for p in paths]
+        cols = kwargs.get("cols", 2)
+        return op_grid(image, others, cols=cols)
+
+    # Handle crop specially to parse arguments
+    if op_name == "crop":
+        x, y, w, h = args[0], args[1], args[2], args[3]
+        # Parse if string percentages
+        if isinstance(x, str) or isinstance(y, str):
+            x, y, w, h = parse_crop([str(x), str(y), str(w), str(h)], image.size)
+        return op_crop(image, x, y, w, h)
+
+    # Standard operations
+    if op_name not in OPERATIONS:
+        raise ValueError(f"Unknown operation: {op_name}")
+
+    op_func = OPERATIONS[op_name]
+    return op_func(image, *args, **kwargs)

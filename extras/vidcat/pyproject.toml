@@ -27,6 +27,7 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "charpx>=0.1.0",
+    "imgcat>=0.1.0",
     "pillow>=9.0",
 ]
 

@@ -331,24 +331,7 @@ def main() -> None:
         description="Display images in the terminal using charpx",
     )
 
-    subparsers = parser.add_subparsers(dest="command")
-
-    # skill subcommand
-    skill_parser = subparsers.add_parser("skill", help="Manage Claude Code skill")
-    skill_parser.add_argument(
-        "--install", action="store_true", help="Install the skill"
-    )
-    skill_parser.add_argument(
-        "--local", action="store_true", help="Install to current project"
-    )
-    skill_parser.add_argument(
-        "--global", dest="global_", action="store_true", help="Install globally"
-    )
-    skill_parser.add_argument(
-        "--show", action="store_true", help="Show skill content"
-    )
-
-    # Main arguments
+    # Main arguments first
     parser.add_argument(
         "images", type=Path, nargs="*", help="Image file(s) to display"
     )
@@ -392,18 +375,33 @@ def main() -> None:
         help="Disable color output"
     )
 
+    # Skill management options (as flags instead of subcommand)
+    parser.add_argument(
+        "--skill-install", action="store_true",
+        help="Install Claude Code skill"
+    )
+    parser.add_argument(
+        "--skill-show", action="store_true",
+        help="Show Claude Code skill content"
+    )
+    parser.add_argument(
+        "--local", action="store_true",
+        help="Install skill to current project (use with --skill-install)"
+    )
+    parser.add_argument(
+        "--global", dest="global_", action="store_true",
+        help="Install skill globally (use with --skill-install)"
+    )
+
     args = parser.parse_args()
 
-    # Handle skill subcommand
-    if args.command == "skill":
-        if args.show:
-            print(SKILL_CONTENT)
-            return
-        if args.install:
-            success = skill_install(local=args.local, global_=args.global_)
-            sys.exit(0 if success else 1)
-        skill_parser.print_help()
+    # Handle skill options
+    if args.skill_show:
+        print(SKILL_CONTENT)
         return
+    if args.skill_install:
+        success = skill_install(local=args.local, global_=args.global_)
+        sys.exit(0 if success else 1)
 
     # Main command
     if not args.images:

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from PIL import Image
 
 from charpx import braille, quadrants, sextants, ascii, sixel, kitty
+from charpx.auto import detect_kitty, detect_sixel
 from charpx.canvas import Canvas
 from charpx.renderers import Renderer
 
@@ -81,3 +82,22 @@ def render_to_terminal(
     canvas = Canvas(bitmap, colors=colors)
     canvas.out(configured)
     print()  # Newline after output
+
+
+def auto_detect_renderer() -> str:
+    """Auto-detect best renderer for current terminal.
+
+    Detection order (best to fallback):
+        1. kitty - Kitty graphics protocol (kitty, ghostty)
+        2. sixel - Sixel graphics (xterm, mlterm, foot, wezterm)
+        3. sextants - Unicode sextant blocks (best fallback)
+
+    Returns:
+        Renderer name string.
+    """
+    if detect_kitty():
+        return "kitty"
+    elif detect_sixel():
+        return "sixel"
+    else:
+        return "sextants"  # Best fallback for color/resolution

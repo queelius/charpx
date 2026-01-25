@@ -1,17 +1,15 @@
-"""Pipeline utilities for JSON image encoding/decoding.
+"""Pipeline utilities for lazy image processing.
 
-Handles serialization of images for Unix pipe composition.
+Implements lazy evaluation: JSON carries only file path + operations list.
+Image is loaded and processed only at render/save time.
 """
 
 from __future__ import annotations
 
-import base64
 import io
 import json
 import sys
-import tempfile
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -20,93 +18,97 @@ from PIL import Image
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# Size threshold for base64 vs temp file (1MB)
-BASE64_THRESHOLD = 1024 * 1024
-
 
 @dataclass
 class PipelineState:
-    """State passed through the pipeline.
+    """Lazy pipeline state - stores path and operations, not image data.
 
     Attributes:
-        image: PIL Image in RGBA mode
-        metadata: Image metadata (original path, sizes, etc.)
-        history: List of operations applied
+        path: Source image path, URL, or "<stdin>" for stdin input
+        ops: List of operations to apply, each as (name, args, kwargs)
+        metadata: Optional metadata dict
     """
 
-    image: Image.Image
+    path: str
+    ops: list[tuple[str, tuple, dict]] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
-    history: list[dict] = field(default_factory=list)
 
-    def add_operation(self, op: str, args: list | None = None) -> None:
-        """Record an operation in history."""
-        self.history.append({"op": op, "args": args or []})
+    def add_op(self, name: str, *args, **kwargs) -> None:
+        """Append operation to the list.
+
+        Args:
+            name: Operation name (e.g., "resize", "dither")
+            *args: Positional arguments for the operation
+            **kwargs: Keyword arguments for the operation
+        """
+        self.ops.append((name, args, kwargs))
 
     def to_json(self) -> str:
-        """Serialize state to JSON string."""
-        # Convert image to bytes
-        buffer = io.BytesIO()
-        self.image.save(buffer, format="PNG")
-        image_bytes = buffer.getvalue()
+        """Serialize state to JSON string.
 
-        # Decide encoding based on size
-        if len(image_bytes) < BASE64_THRESHOLD:
-            image_data = {
-                "type": "base64",
-                "format": "png",
-                "data": base64.b64encode(image_bytes).decode("ascii"),
-            }
-        else:
-            # Use temp file for large images
-            with tempfile.NamedTemporaryFile(
-                suffix=".png", delete=False, prefix="chop_"
-            ) as f:
-                f.write(image_bytes)
-                image_data = {
-                    "type": "file",
-                    "format": "png",
-                    "path": f.name,
-                }
+        Returns compact JSON with version 2 format:
+        {"version": 2, "path": "photo.jpg", "ops": [...], "metadata": {...}}
+        """
+        # Convert ops to JSON-serializable format
+        ops_data = []
+        for name, args, kwargs in self.ops:
+            ops_data.append([name, list(args), kwargs])
 
         output = {
-            "version": 1,
-            "image": image_data,
-            "metadata": {
-                **self.metadata,
-                "current_size": list(self.image.size),
-            },
-            "history": self.history,
+            "version": 2,
+            "path": self.path,
+            "ops": ops_data,
+            "metadata": self.metadata,
         }
-
         return json.dumps(output)
 
     @classmethod
     def from_json(cls, json_str: str) -> PipelineState:
-        """Deserialize state from JSON string."""
+        """Deserialize state from JSON string.
+
+        Supports version 2 format (lazy) only.
+        """
         data = json.loads(json_str)
+        version = data.get("version", 1)
 
-        if data.get("version", 1) != 1:
-            raise ValueError(f"Unsupported pipeline version: {data.get('version')}")
+        if version == 2:
+            # Lazy format: path + ops
+            ops = []
+            for op_data in data.get("ops", []):
+                name = op_data[0]
+                args = tuple(op_data[1]) if len(op_data) > 1 else ()
+                kwargs = op_data[2] if len(op_data) > 2 else {}
+                ops.append((name, args, kwargs))
 
-        image_data = data["image"]
-
-        if image_data["type"] == "base64":
-            image_bytes = base64.b64decode(image_data["data"])
-            image = Image.open(io.BytesIO(image_bytes))
-        elif image_data["type"] == "file":
-            image = Image.open(image_data["path"])
+            return cls(
+                path=data["path"],
+                ops=ops,
+                metadata=data.get("metadata", {}),
+            )
         else:
-            raise ValueError(f"Unknown image type: {image_data['type']}")
+            raise ValueError(
+                f"Unsupported pipeline version: {version}. "
+                "Only version 2 (lazy) format is supported."
+            )
 
-        # Ensure RGBA
-        if image.mode != "RGBA":
-            image = image.convert("RGBA")
+    def materialize(self) -> Image.Image:
+        """Load image and apply all operations.
 
-        return cls(
-            image=image,
-            metadata=data.get("metadata", {}),
-            history=data.get("history", []),
-        )
+        Called at render/save time to actually process the image.
+
+        Returns:
+            Processed PIL Image in RGBA mode.
+        """
+        from chop.operations import apply_operation
+
+        # Load image from path
+        image = load_image(self.path)
+
+        # Apply all operations in order
+        for op_name, args, kwargs in self.ops:
+            image = apply_operation(image, op_name, *args, **kwargs)
+
+        return image
 
 
 def read_pipeline_input() -> PipelineState | None:
@@ -132,11 +134,39 @@ def write_pipeline_output(state: PipelineState) -> None:
     print(state.to_json())
 
 
+def load_ansi_file(source: str) -> Image.Image:
+    """Load ANSI terminal art from file and convert to PIL Image.
+
+    Uses charpx's from_ansi() adapter to parse braille, quadrant, sextant,
+    or ASCII art back into a bitmap.
+
+    Args:
+        source: File path to .ans file (UTF-8 encoded)
+
+    Returns:
+        PIL Image in RGBA mode
+    """
+    from charpx.adapters.ansi import from_ansi
+
+    with open(source, encoding="utf-8") as f:
+        text = f.read()
+
+    canvas = from_ansi(text)
+    image = canvas.to_pil()
+
+    # Ensure RGBA mode
+    if image.mode != "RGBA":
+        image = image.convert("RGBA")
+
+    return image
+
+
 def load_image(source: str) -> Image.Image:
     """Load image from file, URL, or stdin.
 
     Args:
         source: File path, URL, or "-" for stdin.
+                Supports .ans files (ANSI terminal art).
 
     Returns:
         PIL Image in RGBA mode.
@@ -152,6 +182,9 @@ def load_image(source: str) -> Image.Image:
         with urllib.request.urlopen(source) as response:
             image_bytes = response.read()
         image = Image.open(io.BytesIO(image_bytes))
+    elif source.lower().endswith(".ans"):
+        # ANSI terminal art file
+        return load_ansi_file(source)
     else:
         # File path
         image = Image.open(source)

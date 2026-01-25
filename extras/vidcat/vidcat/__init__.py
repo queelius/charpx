@@ -1,1 +1,10 @@
-# vidcat - Terminal video frame viewer
+"""vidcat - Terminal video frame viewer.
+
+Display video frames in the terminal using charpx renderers.
+Requires ffmpeg to be installed.
+"""
+
+from vidcat.vidcat import main, vidcat, view, to_asciinema
+
+__version__ = "0.1.0"
+__all__ = ["main", "vidcat", "view", "to_asciinema"]

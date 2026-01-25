@@ -7,7 +7,7 @@ Example:
     $ pdfcat document.pdf              # View with auto-detected renderer
     $ pdfcat -r braille document.pdf   # Force braille renderer
     $ pdfcat --pages 1-3 document.pdf  # View specific pages
-    $ pdfcat skill --install           # Install Claude Code skill
+    $ pdfcat --skill-install --global   # Install Claude Code skill
 
 As a library:
     >>> from pdfcat import view, pdfcat

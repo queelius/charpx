@@ -301,6 +301,11 @@ def pdfcat(
 
     TERMINAL_CELL_RATIO = 0.5
 
+    # For kitty, configure renderer to use terminal columns for scaling
+    if renderer == "kitty":
+        from charpx import kitty as kitty_renderer
+        rend = kitty_renderer(columns=char_width)
+
     try:
         for page in result.pages:
             if result.total_pages > 1:
@@ -309,27 +314,34 @@ def pdfcat(
             # Load page image
             pil_img = Image.open(page.image_path)
 
-            # Calculate dimensions
-            CELL_PIXEL_WIDTH = 8
-            if renderer in ("sixel", "kitty"):
-                pixel_width = char_width * CELL_PIXEL_WIDTH
+            # For kitty, keep image at original DPI-rendered size
+            # The kitty protocol's columns parameter handles display scaling
+            if renderer == "kitty":
+                # Don't resize - kitty will scale to fit columns
+                pass
             else:
-                pixel_width = char_width * rend.cell_width
+                # Calculate dimensions for other renderers
+                if renderer == "sixel":
+                    # Sixel: use reasonable pixel width
+                    CELL_PIXEL_WIDTH = 10
+                    pixel_width = char_width * CELL_PIXEL_WIDTH
+                else:
+                    pixel_width = char_width * rend.cell_width
 
-            # Resize to fit width while maintaining aspect ratio
-            w, h = pil_img.size
-            aspect = h / w
-            new_w = pixel_width
-            new_h = int(new_w * aspect)
-            pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-
-            # Aspect ratio correction for character renderers
-            if renderer not in ("sixel", "kitty"):
-                cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
+                # Resize to fit width while maintaining aspect ratio
                 w, h = pil_img.size
-                new_h = int(h * cell_aspect)
-                if new_h > 0:
-                    pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
+                aspect = h / w
+                new_w = pixel_width
+                new_h = int(new_w * aspect)
+                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+                # Aspect ratio correction for character renderers
+                if renderer not in ("sixel", "kitty"):
+                    cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
+                    w, h = pil_img.size
+                    new_h = int(h * cell_aspect)
+                    if new_h > 0:
+                        pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
 
             canvas = from_pil(pil_img)
 
@@ -464,26 +476,23 @@ def main() -> None:
         description="Display PDF pages in the terminal using charpx",
     )
 
-    subparsers = parser.add_subparsers(dest="command")
-
-    # skill subcommand
-    skill_parser = subparsers.add_parser("skill", help="Manage Claude Code skill")
-    skill_parser.add_argument(
-        "--install", action="store_true", help="Install the skill"
-    )
-    skill_parser.add_argument(
-        "--local", action="store_true", help="Install to current project"
-    )
-    skill_parser.add_argument(
-        "--global", dest="global_", action="store_true", help="Install globally"
-    )
-    skill_parser.add_argument(
-        "--show", action="store_true", help="Show skill content"
-    )
-
     # Main command arguments
     parser.add_argument(
         "pdf", type=Path, nargs="?", help="PDF file to display"
+    )
+
+    # Skill management flags
+    parser.add_argument(
+        "--skill-show", action="store_true", help="Show Claude Code skill content"
+    )
+    parser.add_argument(
+        "--skill-install", action="store_true", help="Install Claude Code skill"
+    )
+    parser.add_argument(
+        "--local", action="store_true", help="Install skill to current project"
+    )
+    parser.add_argument(
+        "--global", dest="global_", action="store_true", help="Install skill globally"
     )
     parser.add_argument(
         "-r",
@@ -535,16 +544,13 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Handle skill subcommand
-    if args.command == "skill":
-        if args.show:
-            print(SKILL_CONTENT)
-            return
-        if args.install:
-            success = skill_install(local=args.local, global_=args.global_)
-            sys.exit(0 if success else 1)
-        skill_parser.print_help()
+    # Handle skill flags
+    if args.skill_show:
+        print(SKILL_CONTENT)
         return
+    if args.skill_install:
+        success = skill_install(local=args.local, global_=args.global_)
+        sys.exit(0 if success else 1)
 
     # Main command
     if not args.pdf:

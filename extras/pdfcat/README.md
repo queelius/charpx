@@ -49,13 +49,13 @@ Install the skill to help Claude Code use pdfcat:
 
 ```bash
 # Install to current project
-pdfcat skill --install --local
+pdfcat --skill-install --local
 
 # Install globally
-pdfcat skill --install --global
+pdfcat --skill-install --global
 
 # Show skill content
-pdfcat skill --show
+pdfcat --skill-show
 ```
 
 ### Python API
