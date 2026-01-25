@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "charpx"
+version = "0.1.0"
+description = "Unified terminal graphics library - render bitmaps to braille, blocks, ASCII, sixel, and kitty"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "spinoza"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Terminals",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+# Legacy CLI (now delegates to imgcat)
+cli = [
+    "pillow>=9.0",
+]
+# Adapters for various image sources
+adapters = [
+    "pillow>=9.0",
+    "matplotlib>=3.5",
+]
+# Terminal image viewer (dependencies only - install imgcat separately)
+imgcat-deps = [
+    "pillow>=9.0",
+]
+# Terminal PDF viewer (dependencies only - install pdfcat separately)
+pdfcat-deps = [
+    "pillow>=9.0",
+    "pypdfium2>=4.0",
+]
+# Terminal markdown viewer (dependencies only - install mdcat separately)
+mdcat-deps = [
+    "pillow>=9.0",
+    "rich>=13.0",
+]
+# Development
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pillow>=9.0",
+    "matplotlib>=3.5",
+    "rich>=13.0",
+    "pypdfium2>=4.0",
+]
+# Everything
+all = [
+    "charpx[cli,adapters,dev]",
+]
+
+[project.scripts]
+charpx = "charpx.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/spinoza/charpx"
+Repository = "https://github.com/spinoza/charpx"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["charpx*", "extras*"]
+
+# Entry points for extras (when installed via pip install charpx[imgcat], etc.)
+# Each extra also has its own standalone pyproject.toml for independent installation
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.coverage.run]
+source = ["charpx"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]

@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdfcat"
+version = "0.1.0"
+description = "Terminal PDF viewer built on charpx"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "spinoza"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Terminals",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "charpx>=0.1.0",
+    "pillow>=9.0",
+    "pypdfium2>=4.0",
+]
+
+[project.scripts]
+pdfcat = "pdfcat.pdfcat:main"
+
+[project.urls]
+Homepage = "https://github.com/spinoza/charpx"
+Repository = "https://github.com/spinoza/charpx"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pdfcat*"]

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fplot"
+version = "0.1.0"
+description = "Terminal function plotter using charpx renderers (braille, quadrants, sextants, ASCII, sixel, kitty)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "charpx developers"}
+]
+keywords = ["terminal", "plotting", "braille", "function", "graph", "parametric", "visualization"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Topic :: Terminals",
+]
+dependencies = [
+    "numpy>=1.20",
+    "charpx>=0.1.0",
+]
+
+[project.scripts]
+fplot = "fplot:main"
+
+[project.urls]
+Homepage = "https://github.com/anthropics/charpx"
+Repository = "https://github.com/anthropics/charpx"
+Documentation = "https://github.com/anthropics/charpx/tree/main/extras/fplot"
+
+[tool.setuptools]
+py-modules = ["fplot"]
