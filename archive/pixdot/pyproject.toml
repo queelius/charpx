@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pixdot"
+version = "1.0.0"
+description = "Bitmap to braille rasterizer for terminals"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Alex Towell", email = "queelius@gmail.com"},
+]
+keywords = ["unicode", "terminal", "braille", "bitmap", "rasterizer", "tui"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Terminals",
+]
+dependencies = [
+    "numpy>=1.21",
+]
+
+[project.optional-dependencies]
+pil = ["pillow>=9.0"]
+matplotlib = ["matplotlib>=3.5"]
+cairo = ["pycairo>=1.20"]
+all = ["pillow>=9.0", "matplotlib>=3.5", "pycairo>=1.20"]
+cli = ["pillow>=9.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pillow>=9.0",
+    "matplotlib>=3.5",
+]
+
+[project.scripts]
+pixdot = "pixdot.image_cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pixdot*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.coverage.run]
+source = ["pixdot"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
