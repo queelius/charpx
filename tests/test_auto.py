@@ -1,11 +1,11 @@
-"""Tests for charpx.auto module."""
+"""Tests for dapple.auto module."""
 
 import os
 from unittest.mock import patch
 
 import pytest
 
-from charpx.auto import (
+from dapple.auto import (
     Protocol,
     TerminalInfo,
     auto_renderer,
@@ -105,7 +105,7 @@ class TestAutoRenderer:
 
     def test_plain_mode_returns_ascii(self):
         renderer = auto_renderer(plain=True)
-        from charpx import ascii
+        from dapple import ascii
         assert renderer is ascii
 
     def test_returns_renderer(self):

@@ -1,6 +1,6 @@
 """vidcat - Terminal video frame viewer.
 
-Display video frames in the terminal using charpx renderers.
+Display video frames in the terminal using dapple renderers.
 Requires ffmpeg to be installed.
 """
 

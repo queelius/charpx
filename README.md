@@ -1,14 +1,14 @@
-# charpx
+# dapple
 
 Terminal-centric development is now mainstream. Claude Code runs in your terminal. AI assistants stream their work as text. Developers SSH into remote machines, pair with tmux, and live in the command line. In this world, there's a gap: we want to see graphics without leaving the terminal.
 
-charpx is a unified terminal graphics library. One Canvas API, multiple renderers: braille, quadrants, sextants, ASCII, sixel, kitty, and fingerprint. Choose the renderer that matches your terminal's capabilities and your visual needs.
+dapple is a unified terminal graphics library. One Canvas API, multiple renderers: braille, quadrants, sextants, ASCII, sixel, kitty, and fingerprint. Choose the renderer that matches your terminal's capabilities and your visual needs.
 
 ## Why a Unified Library?
 
 Terminal graphics tools are fragmented. pixdot does braille. cel does quadrant blocks. chafa handles sixel. Each has its own API, its own conventions.
 
-charpx unifies these approaches:
+dapple unifies these approaches:
 
 - **Single Canvas class** - Load your bitmap once, output anywhere
 - **Pluggable renderers** - Switch formats with one line: `canvas.out(braille)` or `canvas.out(quadrants)`
@@ -19,20 +19,20 @@ charpx unifies these approaches:
 
 ```bash
 # Core library (numpy only)
-pip install charpx
+pip install dapple
 
 # With CLI support (adds pillow)
-pip install charpx[cli]
+pip install dapple[cli]
 
 # With all adapters (matplotlib, cairo)
-pip install charpx[all]
+pip install dapple[all]
 ```
 
 ## Quick Start
 
 ```python
 import numpy as np
-from charpx import Canvas, braille, quadrants, sextants
+from dapple import Canvas, braille, quadrants, sextants
 
 # Create a canvas from a bitmap
 bitmap = np.random.rand(40, 80).astype(np.float32)
@@ -58,7 +58,7 @@ print(canvas)  # Uses quadrants
 
 ## Renderers
 
-charpx includes seven renderers, each with different trade-offs:
+dapple includes seven renderers, each with different trade-offs:
 
 | Renderer | Cell Size | Colors | Best For |
 |----------|-----------|--------|----------|
@@ -73,7 +73,7 @@ charpx includes seven renderers, each with different trade-offs:
 ### Braille (Structure)
 
 ```python
-from charpx import braille
+from dapple import braille
 
 # Binary threshold
 canvas.out(braille)                      # Default threshold 0.5
@@ -89,7 +89,7 @@ canvas.out(braille(color_mode="truecolor"))  # Full 24-bit RGB
 ### Quadrants (Color)
 
 ```python
-from charpx import quadrants
+from dapple import quadrants
 
 # Block characters with ANSI colors
 canvas.out(quadrants)                    # True color (default)
@@ -100,7 +100,7 @@ canvas.out(quadrants(grayscale=True))    # Grayscale only
 ### Sixel & Kitty (True Pixels)
 
 ```python
-from charpx import sixel, kitty
+from dapple import sixel, kitty
 
 # Sixel for xterm-compatible terminals
 canvas.out(sixel)
@@ -115,7 +115,7 @@ canvas.out(kitty(format="rgb"))          # Raw RGB
 ### Fingerprint (Artistic)
 
 ```python
-from charpx import fingerprint
+from dapple import fingerprint
 
 # Glyph matching using font bitmap correlation
 canvas.out(fingerprint)
@@ -126,10 +126,10 @@ canvas.out(fingerprint(cell_width=10, cell_height=20))
 
 ## Preprocessing
 
-charpx includes preprocessing functions for improved output:
+dapple includes preprocessing functions for improved output:
 
 ```python
-from charpx import (
+from dapple import (
     auto_contrast,    # Stretch histogram to 0-1 range
     floyd_steinberg,  # Dithering for binary output
     invert,          # Flip brightness values
@@ -154,7 +154,7 @@ Pass RGB colors alongside the bitmap:
 
 ```python
 import numpy as np
-from charpx import Canvas, quadrants
+from dapple import Canvas, quadrants
 
 # Grayscale bitmap + RGB colors
 bitmap = np.random.rand(40, 80).astype(np.float32)
@@ -168,7 +168,7 @@ canvas.out(braille(color_mode="truecolor"))  # RGB braille
 Or use `from_array` to auto-extract luminance from RGB:
 
 ```python
-from charpx import from_array
+from dapple import from_array
 
 rgb = np.random.rand(40, 80, 3).astype(np.float32)
 canvas = from_array(rgb)  # Auto-computes grayscale bitmap
@@ -180,7 +180,7 @@ Load images from common formats:
 
 ```python
 # PIL/Pillow
-from charpx import from_pil
+from dapple import from_pil
 from PIL import Image
 
 img = Image.open("photo.jpg")
@@ -188,7 +188,7 @@ canvas = from_pil(img)
 canvas.out(quadrants)
 
 # Matplotlib
-from charpx.adapters import MatplotlibAdapter
+from dapple.adapters import MatplotlibAdapter
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
@@ -200,7 +200,7 @@ canvas.out(braille)
 plt.close(fig)
 
 # Cairo
-from charpx.adapters import CairoAdapter
+from dapple.adapters import CairoAdapter
 import cairo
 
 surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 200, 100)
@@ -241,18 +241,18 @@ inverted = canvas.with_invert()
 
 ```bash
 # Basic usage
-charpx photo.jpg                     # Default: quadrants
-charpx photo.jpg -r braille          # Braille output
-charpx photo.jpg -r sixel            # Sixel output
+dapple photo.jpg                     # Default: quadrants
+dapple photo.jpg -r braille          # Braille output
+dapple photo.jpg -r sixel            # Sixel output
 
 # Options
-charpx photo.jpg -w 120              # Custom width
-charpx photo.jpg --dither            # Floyd-Steinberg dithering
-charpx photo.jpg --contrast          # Auto-contrast
-charpx photo.jpg --invert            # Invert colors
+dapple photo.jpg -w 120              # Custom width
+dapple photo.jpg --dither            # Floyd-Steinberg dithering
+dapple photo.jpg --contrast          # Auto-contrast
+dapple photo.jpg --invert            # Invert colors
 
 # Output
-charpx photo.jpg -o output.txt       # Save to file
+dapple photo.jpg -o output.txt       # Save to file
 ```
 
 ## When to Use Each Renderer
@@ -269,13 +269,13 @@ charpx photo.jpg -o output.txt       # Save to file
 
 ## Relationship to pixdot and cel
 
-charpx unifies and extends the terminal graphics ecosystem:
+dapple unifies and extends the terminal graphics ecosystem:
 
-- **pixdot**: Focused braille renderer (~50 lines). charpx's braille renderer provides the same output.
-- **cel**: Focused quadrant renderer with ANSI colors. charpx's quadrants renderer provides the same output.
-- **charpx**: The unified library combining all approaches with a consistent API.
+- **pixdot**: Focused braille renderer (~50 lines). dapple's braille renderer provides the same output.
+- **cel**: Focused quadrant renderer with ANSI colors. dapple's quadrants renderer provides the same output.
+- **dapple**: The unified library combining all approaches with a consistent API.
 
-Use the focused libraries (pixdot, cel) for minimal dependencies and pedagogical clarity. Use charpx when you want flexibility to switch between renderers or need multiple output formats.
+Use the focused libraries (pixdot, cel) for minimal dependencies and pedagogical clarity. Use dapple when you want flexibility to switch between renderers or need multiple output formats.
 
 ## License
 

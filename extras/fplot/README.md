@@ -1,6 +1,6 @@
 # fplot: Terminal Function Plotter
 
-A command-line tool for plotting mathematical functions directly in the terminal using [charpx](../../README.md) renderers.
+A command-line tool for plotting mathematical functions directly in the terminal using [dapple](../../README.md) renderers.
 
 ## Why Terminal Graphics?
 
@@ -18,9 +18,9 @@ cd extras/fplot
 pip install -e .
 ```
 
-## charpx: The Foundation
+## dapple: The Foundation
 
-fplot is built on charpx, a unified terminal graphics library. It provides multiple renderers:
+fplot is built on dapple, a unified terminal graphics library. It provides multiple renderers:
 
 | Renderer | Resolution | Best For |
 |----------|-----------|----------|
@@ -200,9 +200,9 @@ fplot follows a clean pipeline architecture:
 
 1. **Expression evaluation** → Safe `eval()` with sandboxed namespace
 2. **Mask generation** → Boolean array of where curve passes
-3. **Rendering** → charpx renderer writes to stdout
+3. **Rendering** → dapple renderer writes to stdout
 
-This design is renderer-agnostic: the same mask works with any charpx renderer.
+This design is renderer-agnostic: the same mask works with any dapple renderer.
 
 ## Security
 
@@ -213,4 +213,4 @@ Expression evaluation uses a sandboxed `eval()`:
 
 ## License
 
-MIT License - see the main charpx repository for details.
+MIT License - see the main dapple repository for details.

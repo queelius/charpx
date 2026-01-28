@@ -1,4 +1,4 @@
-"""Canvas - the core bitmap container for charpx.
+"""Canvas - the core bitmap container for dapple.
 
 Canvas holds a bitmap (and optionally color data) and provides rendering
 to various terminal formats via pluggable renderers.
@@ -15,13 +15,13 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from charpx.renderers import Renderer
+    from dapple.renderers import Renderer
 
 
 class Canvas:
     """A bitmap that renders to terminal character art.
 
-    Canvas is the primary class for working with charpx. It holds a grayscale
+    Canvas is the primary class for working with dapple. It holds a grayscale
     bitmap and optional color data, and can render to various formats using
     pluggable renderers.
 
@@ -35,7 +35,7 @@ class Canvas:
 
     Example:
         >>> import numpy as np
-        >>> from charpx import Canvas, braille, quadrants
+        >>> from dapple import Canvas, braille, quadrants
         >>>
         >>> # Create canvas from bitmap
         >>> bitmap = np.random.rand(40, 80).astype(np.float32)
@@ -154,7 +154,7 @@ class Canvas:
         """
         renderer = self._renderer
         if renderer is None:
-            from charpx.renderers import braille
+            from dapple.renderers import braille
 
             renderer = braille
         buf = StringIO()

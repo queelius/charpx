@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fplot"
 version = "0.1.0"
-description = "Terminal function plotter using charpx renderers (braille, quadrants, sextants, ASCII, sixel, kitty)"
+description = "Terminal function plotter using dapple renderers (braille, quadrants, sextants, ASCII, sixel, kitty)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "charpx developers"}
+    {name = "dapple developers"}
 ]
 keywords = ["terminal", "plotting", "braille", "function", "graph", "parametric", "visualization"]
 classifiers = [
@@ -29,16 +29,16 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.20",
-    "charpx>=0.1.0",
+    "dapple>=0.1.0",
 ]
 
 [project.scripts]
 fplot = "fplot:main"
 
 [project.urls]
-Homepage = "https://github.com/anthropics/charpx"
-Repository = "https://github.com/anthropics/charpx"
-Documentation = "https://github.com/anthropics/charpx/tree/main/extras/fplot"
+Homepage = "https://github.com/anthropics/dapple"
+Repository = "https://github.com/anthropics/dapple"
+Documentation = "https://github.com/anthropics/dapple/tree/main/extras/fplot"
 
 [tool.setuptools]
 py-modules = ["fplot"]

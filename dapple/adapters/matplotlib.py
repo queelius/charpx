@@ -1,4 +1,4 @@
-"""Matplotlib figure adapter for charpx.
+"""Matplotlib figure adapter for dapple.
 
 Provides conversion from Matplotlib figures to Canvas.
 """
@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 if TYPE_CHECKING:
-    from charpx import Canvas
-    from charpx.renderers import Renderer
+    from dapple import Canvas
+    from dapple.renderers import Renderer
 
 
 class MatplotlibAdapter:
@@ -22,7 +22,7 @@ class MatplotlibAdapter:
 
     Example:
         >>> import matplotlib.pyplot as plt
-        >>> from charpx.adapters import MatplotlibAdapter
+        >>> from dapple.adapters import MatplotlibAdapter
         >>> fig, ax = plt.subplots()
         >>> ax.plot([0, 1, 2], [0, 1, 0])
         >>> adapter = MatplotlibAdapter(fig, width=80)
@@ -75,7 +75,7 @@ class MatplotlibAdapter:
         Returns:
             New Canvas object.
         """
-        from charpx import Canvas
+        from dapple import Canvas
 
         fig = self._figure
 
@@ -145,7 +145,7 @@ def from_matplotlib(
 
     Example:
         >>> import matplotlib.pyplot as plt
-        >>> from charpx.adapters import from_matplotlib
+        >>> from dapple.adapters import from_matplotlib
         >>> fig, ax = plt.subplots()
         >>> ax.plot([0, 1, 2], [0, 1, 0])
         >>> canvas = from_matplotlib(fig, width=80)

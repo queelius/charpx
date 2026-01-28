@@ -101,7 +101,7 @@ class BrailleRenderer:
                     or "truecolor" for full 24-bit RGB.
 
     Example:
-        >>> from charpx import Canvas, braille
+        >>> from dapple import Canvas, braille
         >>> canvas = Canvas(np.random.rand(24, 40))
         >>> canvas.out(braille)                      # to stdout
         >>> canvas.out(braille(threshold=0.3))       # custom threshold

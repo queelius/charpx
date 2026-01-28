@@ -1,4 +1,4 @@
-"""Renderer protocol and exports for charpx renderers."""
+"""Renderer protocol and exports for dapple renderers."""
 
 from __future__ import annotations
 
@@ -57,13 +57,13 @@ class Renderer(Protocol):
 
 
 # Import renderers for convenient access
-from charpx.renderers.braille import BrailleRenderer, braille
-from charpx.renderers.quadrants import QuadrantsRenderer, quadrants
-from charpx.renderers.sextants import SextantsRenderer, sextants
-from charpx.renderers.ascii import AsciiRenderer, ascii
-from charpx.renderers.sixel import SixelRenderer, sixel
-from charpx.renderers.kitty import KittyRenderer, kitty
-from charpx.renderers.fingerprint import FingerprintRenderer, fingerprint
+from dapple.renderers.braille import BrailleRenderer, braille
+from dapple.renderers.quadrants import QuadrantsRenderer, quadrants
+from dapple.renderers.sextants import SextantsRenderer, sextants
+from dapple.renderers.ascii import AsciiRenderer, ascii
+from dapple.renderers.sixel import SixelRenderer, sixel
+from dapple.renderers.kitty import KittyRenderer, kitty
+from dapple.renderers.fingerprint import FingerprintRenderer, fingerprint
 
 __all__ = [
     "Renderer",

@@ -28,7 +28,7 @@ def auto_contrast(bitmap: NDArray[np.floating]) -> NDArray[np.floating]:
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import auto_contrast
+        >>> from dapple.preprocess import auto_contrast
         >>> img = np.array([[0.3, 0.5], [0.4, 0.6]])
         >>> stretched = auto_contrast(img)
         >>> stretched.min(), stretched.max()
@@ -63,7 +63,7 @@ def floyd_steinberg(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import floyd_steinberg
+        >>> from dapple.preprocess import floyd_steinberg
         >>> img = np.linspace(0, 1, 16).reshape(4, 4).astype(np.float32)
         >>> dithered = floyd_steinberg(img)
         >>> np.unique(dithered)
@@ -106,7 +106,7 @@ def invert(bitmap: NDArray[np.floating]) -> NDArray[np.floating]:
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import invert
+        >>> from dapple.preprocess import invert
         >>> img = np.array([[0.0, 0.5], [0.75, 1.0]])
         >>> inverted = invert(img)
         >>> inverted
@@ -131,7 +131,7 @@ def gamma_correct(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import gamma_correct
+        >>> from dapple.preprocess import gamma_correct
         >>> img = np.array([[0.5]])
         >>> gamma_correct(img, 2.2)[0, 0]  # Darker
         0.21763764
@@ -156,7 +156,7 @@ def sharpen(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import sharpen
+        >>> from dapple.preprocess import sharpen
         >>> img = np.array([[0.5, 0.5, 0.5],
         ...                 [0.5, 1.0, 0.5],
         ...                 [0.5, 0.5, 0.5]], dtype=np.float32)
@@ -275,7 +275,7 @@ def crop(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import crop
+        >>> from dapple.preprocess import crop
         >>> img = np.ones((100, 100), dtype=np.float32)
         >>> cropped = crop(img, 10, 10, 50, 50)
         >>> cropped.shape
@@ -313,7 +313,7 @@ def flip(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import flip
+        >>> from dapple.preprocess import flip
         >>> img = np.array([[1, 0], [0, 0]], dtype=np.float32)
         >>> flip(img, "h")
         array([[0., 1.],
@@ -349,7 +349,7 @@ def rotate(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.preprocess import rotate
+        >>> from dapple.preprocess import rotate
         >>> img = np.array([[1, 0], [0, 0]], dtype=np.float32)
         >>> rotate(img, 90)
         array([[0., 1.],

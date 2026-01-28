@@ -1,11 +1,11 @@
 # pdfcat
 
-Terminal PDF viewer built on [charpx](https://github.com/spinoza/charpx).
+Terminal PDF viewer built on [dapple](https://github.com/spinoza/dapple).
 
 ## Installation
 
 ```bash
-pip install charpx[pdfcat]
+pip install dapple[pdfcat]
 # or standalone
 pip install pdfcat
 ```
@@ -76,7 +76,7 @@ pdfcat("document.pdf", dpi=300, contrast=True)
 ## Requirements
 
 - Python 3.10+
-- charpx
+- dapple
 - pillow
 - pypdfium2
 

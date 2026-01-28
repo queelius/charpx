@@ -1,4 +1,4 @@
-"""PIL/Pillow image adapter for charpx.
+"""PIL/Pillow image adapter for dapple.
 
 Provides conversion from PIL Images to Canvas.
 """
@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 if TYPE_CHECKING:
-    from charpx import Canvas
-    from charpx.renderers import Renderer
+    from dapple import Canvas
+    from dapple.renderers import Renderer
 
 
 class PILAdapter:
@@ -22,7 +22,7 @@ class PILAdapter:
 
     Example:
         >>> from PIL import Image
-        >>> from charpx.adapters import PILAdapter
+        >>> from dapple.adapters import PILAdapter
         >>> img = Image.open("photo.jpg")
         >>> adapter = PILAdapter(img, width=80)
         >>> canvas = adapter.to_canvas()
@@ -71,7 +71,7 @@ class PILAdapter:
         """
         from PIL import Image
 
-        from charpx import Canvas
+        from dapple import Canvas
 
         img = self._image
 
@@ -131,7 +131,7 @@ def from_pil(
 
     Example:
         >>> from PIL import Image
-        >>> from charpx.adapters import from_pil
+        >>> from dapple.adapters import from_pil
         >>> img = Image.open("photo.jpg")
         >>> canvas = from_pil(img, width=80)
     """
@@ -161,7 +161,7 @@ def load_image(
         FileNotFoundError: If file doesn't exist.
 
     Example:
-        >>> from charpx.adapters.pil import load_image
+        >>> from dapple.adapters.pil import load_image
         >>> canvas = load_image("photo.jpg", width=80)
     """
     try:

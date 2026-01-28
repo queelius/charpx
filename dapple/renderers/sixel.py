@@ -117,7 +117,7 @@ class SixelRenderer:
         scale: Pixel scaling factor (default 1).
 
     Example:
-        >>> from charpx import Canvas, sixel
+        >>> from dapple import Canvas, sixel
         >>> canvas = Canvas(np.random.rand(48, 80))
         >>> canvas.out(sixel)  # In supported terminal
     """

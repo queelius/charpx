@@ -144,7 +144,7 @@ class SextantsRenderer:
         grayscale: Force grayscale output even for RGB input (default False).
 
     Example:
-        >>> from charpx import Canvas, sextants
+        >>> from dapple import Canvas, sextants
         >>> canvas = Canvas(np.random.rand(24, 40))
         >>> canvas.out(sextants)                       # to stdout
         >>> canvas.out(sextants(true_color=False))     # 256-color mode

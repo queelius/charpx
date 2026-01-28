@@ -6,7 +6,7 @@ from io import StringIO
 import numpy as np
 import pytest
 
-from charpx import Canvas, braille, quadrants, ascii
+from dapple import Canvas, braille, quadrants, ascii
 
 
 class TestCanvasInit:
@@ -360,7 +360,7 @@ class TestFromArray:
 
     def test_from_grayscale(self):
         """from_array handles 2D grayscale."""
-        from charpx import from_array
+        from dapple import from_array
 
         array = np.random.rand(10, 20).astype(np.float32)
         canvas = from_array(array)
@@ -369,7 +369,7 @@ class TestFromArray:
 
     def test_from_rgb(self):
         """from_array handles 3D RGB."""
-        from charpx import from_array
+        from dapple import from_array
 
         array = np.random.rand(10, 20, 3).astype(np.float32)
         canvas = from_array(array)

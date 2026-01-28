@@ -26,12 +26,12 @@ What if you're building a tool that needs to work across different environments?
 
 The fragmentation creates friction.
 
-## charpx: One Canvas, Many Renderers
+## dapple: One Canvas, Many Renderers
 
-charpx solves this with a simple abstraction:
+dapple solves this with a simple abstraction:
 
 ```python
-from charpx import Canvas, braille, quadrants, sixel, kitty
+from dapple import Canvas, braille, quadrants, sixel, kitty
 
 # Load once
 canvas = Canvas(bitmap, colors=rgb)
@@ -74,7 +74,7 @@ Previous implementations often returned strings. This creates problems:
 2. Can't stream output progressively
 3. Awkward to write directly to files
 
-charpx renderers write to streams:
+dapple renderers write to streams:
 
 ```python
 # Direct to stdout
@@ -205,8 +205,8 @@ Best for: Artistic effects, experimentation.
 
 Terminal graphics aren't a step backward. They're meeting users where they are: in SSH sessions, in containers, in AI coding workflows.
 
-The terminal is the universal interface. charpx makes graphics work there.
+The terminal is the universal interface. dapple makes graphics work there.
 
 ---
 
-*charpx is available on PyPI: `pip install charpx`*
+*dapple is available on PyPI: `pip install dapple`*

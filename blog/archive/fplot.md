@@ -93,7 +93,7 @@ Each operation reads JSON from stdin, applies the transform, outputs JSON. Chain
 Sometimes you need a real file. Both tools support `-o`:
 
 ```bash
-# fplot to PNG (via charpx's sixel, captured)
+# fplot to PNG (via dapple's sixel, captured)
 fplot "sin(x)" -r sixel -o plot.png
 
 # chop save processed image
@@ -106,10 +106,10 @@ The pipe-based workflow and file-based workflow are complementary. Use pipes for
 
 Terminal art isn't just output—it can be input too.
 
-charpx includes an ANSI adapter that parses terminal art back into bitmaps:
+dapple includes an ANSI adapter that parses terminal art back into bitmaps:
 
 ```python
-from charpx.adapters.ansi import from_ansi
+from dapple.adapters.ansi import from_ansi
 
 # Parse braille art
 canvas = from_ansi("⠿⠿⠿⠿⠿")
@@ -133,7 +133,7 @@ ANSI color codes (24-bit, 256-color, basic 16) are parsed and preserved.
 
 ## Renderers: Same Data, Different Output
 
-Both fplot and chop use charpx's renderer system. Same image data, different terminal output:
+Both fplot and chop use dapple's renderer system. Same image data, different terminal output:
 
 ```bash
 # Braille - 2x4 dots per character, highest density
@@ -174,7 +174,7 @@ The terminal is not a second-class citizen for visualization. It's a capable can
 pip install fplot chop
 ```
 
-Both are built on [charpx](./charpx.md), the unified terminal graphics library.
+Both are built on [dapple](./dapple.md), the unified terminal graphics library.
 
 ---
 

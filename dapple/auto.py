@@ -13,11 +13,11 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from charpx.renderers import Renderer
+    from dapple.renderers import Renderer
 
 
 class Protocol(Enum):
-    """Terminal graphics protocols supported by charpx."""
+    """Terminal graphics protocols supported by dapple."""
     KITTY = "kitty"       # Kitty graphics protocol (PNG inline)
     SIXEL = "sixel"       # Sixel graphics (DEC standard)
     QUADRANTS = "quadrants"  # Unicode quadrant blocks (color)
@@ -148,11 +148,11 @@ def auto_renderer(
         Renderer instance configured for the terminal.
 
     Example:
-        >>> from charpx import Canvas, auto_renderer
+        >>> from dapple import Canvas, auto_renderer
         >>> canvas = Canvas.from_pil(image)
         >>> canvas.out(auto_renderer())
     """
-    from charpx.renderers import ascii, braille, kitty, quadrants, sixel
+    from dapple.renderers import ascii, braille, kitty, quadrants, sixel
 
     # Plain mode - use ASCII for maximum compatibility
     if plain:
@@ -203,15 +203,15 @@ def render_image(
         FileNotFoundError: If image file doesn't exist.
 
     Example:
-        >>> from charpx.auto import render_image
+        >>> from dapple.auto import render_image
         >>> render_image("photo.jpg")  # Auto-detects terminal and renders
     """
     try:
-        from charpx.adapters.pil import load_image
+        from dapple.adapters.pil import load_image
     except ImportError:
         raise ImportError(
             "PIL is required for render_image(). "
-            "Install with: pip install charpx[imgcat]"
+            "Install with: pip install dapple[imgcat]"
         )
 
     # Load and resize image

@@ -1,6 +1,6 @@
 """imgcat - Terminal image viewer.
 
-Core implementation for rendering images to the terminal using charpx.
+Core implementation for rendering images to the terminal using dapple.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, TextIO
 
 if TYPE_CHECKING:
-    from charpx.renderers import Renderer
+    from dapple.renderers import Renderer
 
 
 @dataclass
@@ -49,7 +49,7 @@ def get_renderer(name: str, options: ImgcatOptions) -> Renderer:
     Returns:
         Configured Renderer instance
     """
-    from charpx import (
+    from dapple import (
         ascii,
         braille,
         fingerprint,
@@ -58,7 +58,7 @@ def get_renderer(name: str, options: ImgcatOptions) -> Renderer:
         sextants,
         sixel,
     )
-    from charpx.auto import auto_renderer
+    from dapple.auto import auto_renderer
 
     if name == "auto":
         return auto_renderer(
@@ -132,14 +132,14 @@ def imgcat(
     """
     try:
         from PIL import Image
-        from charpx.adapters.pil import from_pil, load_image
+        from dapple.adapters.pil import from_pil, load_image
     except ImportError:
         raise ImportError(
-            "PIL is required for imgcat. Install with: pip install charpx[imgcat]"
+            "PIL is required for imgcat. Install with: pip install dapple[imgcat]"
         )
 
-    from charpx import auto_contrast as ac, floyd_steinberg, invert as inv
-    from charpx.canvas import Canvas
+    from dapple import auto_contrast as ac, floyd_steinberg, invert as inv
+    from dapple.canvas import Canvas
 
     options = ImgcatOptions(
         renderer=renderer,
@@ -186,7 +186,7 @@ def imgcat(
             canvas = from_pil(pil_img)
     elif renderer == "auto":
         # For auto, we need to check the actual renderer type
-        from charpx.auto import detect_terminal, Protocol
+        from dapple.auto import detect_terminal, Protocol
         info = detect_terminal()
         if info.protocol not in (Protocol.KITTY, Protocol.SIXEL):
             cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
@@ -237,7 +237,7 @@ def view(image_path: str | Path, **kwargs) -> None:
 # Claude Code skill content
 SKILL_CONTENT = '''# imgcat - Terminal Image Viewer
 
-imgcat displays images in the terminal using charpx renderers.
+imgcat displays images in the terminal using dapple renderers.
 
 ## Usage
 
@@ -328,7 +328,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(
         prog="imgcat",
-        description="Display images in the terminal using charpx",
+        description="Display images in the terminal using dapple",
     )
 
     # Main arguments first

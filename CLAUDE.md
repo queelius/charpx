@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-charpx is a unified terminal graphics library. It provides a single Canvas API with multiple pluggable renderers (braille, quadrants, sextants, ASCII, sixel, kitty, fingerprint) for displaying bitmaps in the terminal.
+dapple is a unified terminal graphics library. It provides a single Canvas API with multiple pluggable renderers (braille, quadrants, sextants, ASCII, sixel, kitty, fingerprint) for displaying bitmaps in the terminal.
 
-The library addresses the fragmentation in terminal graphics: instead of separate libraries for braille (pixdot), color blocks (cel), sixel, and kitty protocols, charpx provides a consistent interface. Load a bitmap once, output to any format.
+The library addresses the fragmentation in terminal graphics: instead of separate libraries for braille (pixdot), color blocks (cel), sixel, and kitty protocols, dapple provides a consistent interface. Load a bitmap once, output to any format.
 
 **Relationship to other libraries:**
-- **pixdot** (../pixdot): Focused braille renderer. charpx's `braille` renderer provides equivalent output.
-- **cel** (../cel): Focused quadrant block renderer. charpx's `quadrants` renderer provides equivalent output.
-- **charpx**: The unified library combining all approaches.
+- **pixdot** (../pixdot): Focused braille renderer. dapple's `braille` renderer provides equivalent output.
+- **cel** (../cel): Focused quadrant block renderer. dapple's `quadrants` renderer provides equivalent output.
+- **dapple**: The unified library combining all approaches.
 
 ## Commands
 
@@ -23,13 +23,13 @@ pip install -e ".[dev]"
 pytest
 
 # Run tests with coverage
-pytest --cov=charpx --cov-report=term-missing
+pytest --cov=dapple --cov-report=term-missing
 
 # Run a single test
 pytest tests/test_renderers.py::TestBrailleRenderer::test_render_basic -v
 
 # Verify imports work
-python -c "from charpx import Canvas, braille; print('OK')"
+python -c "from dapple import Canvas, braille; print('OK')"
 ```
 
 ## Architecture
@@ -38,46 +38,46 @@ The codebase has a modular structure:
 
 ### Core Modules (numpy only)
 
-- **`charpx/canvas.py`**: Core Canvas class
+- **`dapple/canvas.py`**: Core Canvas class
   - `Canvas(bitmap, colors, renderer)` - Main container for bitmap data
   - `out(renderer, dest)` - Stream-based output to stdout, files, or TextIO
   - `from_array(array)` - Factory from numpy arrays (2D grayscale or 3D RGB)
   - `from_pil(image)` - Factory from PIL Images
   - Composition methods: `hstack`, `vstack`, `overlay`, `crop`
 
-- **`charpx/renderers/__init__.py`**: Renderer protocol and exports
+- **`dapple/renderers/__init__.py`**: Renderer protocol and exports
   - `Renderer` - Protocol defining `render(bitmap, colors, dest)` and cell dimensions
   - Each renderer is a frozen dataclass with callable `__call__` for options
 
-- **`charpx/renderers/braille.py`**: Unicode braille (2x4 dots)
+- **`dapple/renderers/braille.py`**: Unicode braille (2x4 dots)
   - Binary threshold with optional grayscale/truecolor ANSI
   - Cell: 2 wide x 4 tall pixels per character
 
-- **`charpx/renderers/quadrants.py`**: Block characters (2x2)
+- **`dapple/renderers/quadrants.py`**: Block characters (2x2)
   - ANSI foreground/background colors
   - 256-color or 24-bit true color modes
 
-- **`charpx/renderers/sextants.py`**: Block characters (2x3)
+- **`dapple/renderers/sextants.py`**: Block characters (2x3)
   - Higher vertical resolution than quadrants
   - Same color modes as quadrants
 
-- **`charpx/renderers/ascii.py`**: Classic ASCII art (1x2)
+- **`dapple/renderers/ascii.py`**: Classic ASCII art (1x2)
   - Configurable charset (default: ` .:-=+*#%@`)
   - Universal compatibility, no Unicode required
 
-- **`charpx/renderers/sixel.py`**: DEC Sixel protocol (1x1)
+- **`dapple/renderers/sixel.py`**: DEC Sixel protocol (1x1)
   - True pixel output for xterm, mlterm, foot
   - Palette-based color quantization
 
-- **`charpx/renderers/kitty.py`**: Kitty graphics protocol (1x1)
+- **`dapple/renderers/kitty.py`**: Kitty graphics protocol (1x1)
   - True pixel output for kitty, wezterm
   - PNG or raw RGB formats
 
-- **`charpx/renderers/fingerprint.py`**: Glyph matching (8x16)
+- **`dapple/renderers/fingerprint.py`**: Glyph matching (8x16)
   - Correlates image regions with font glyph bitmaps
   - Artistic/experimental output
 
-- **`charpx/preprocess.py`**: Preprocessing utilities
+- **`dapple/preprocess.py`**: Preprocessing utilities
   - `auto_contrast(bitmap)` - Stretch histogram to full 0-1 range
   - `floyd_steinberg(bitmap, threshold)` - Floyd-Steinberg dithering
   - `invert(bitmap)` - Flip brightness values
@@ -88,7 +88,7 @@ The codebase has a modular structure:
 
 ### Adapters (optional dependencies)
 
-- **`charpx/adapters/`**: Library integrations
+- **`dapple/adapters/`**: Library integrations
   - `numpy.py` - NumpyAdapter, from_array
   - `pil.py` - PILAdapter, from_pil, load_image
   - `matplotlib.py` - MatplotlibAdapter, from_matplotlib

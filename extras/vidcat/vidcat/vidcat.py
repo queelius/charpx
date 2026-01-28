@@ -1,6 +1,6 @@
 """vidcat - Terminal video frame viewer.
 
-Extracts frames from video files and renders them to the terminal using charpx.
+Extracts frames from video files and renders them to the terminal using dapple.
 Requires ffmpeg to be installed.
 """
 
@@ -489,7 +489,7 @@ def to_asciinema(
 # Claude Code skill content
 SKILL_CONTENT = '''# vidcat - Terminal Video Frame Viewer
 
-vidcat extracts and displays video frames in the terminal using charpx renderers.
+vidcat extracts and displays video frames in the terminal using dapple renderers.
 
 ## Usage
 
@@ -552,7 +552,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(
         prog="vidcat",
-        description="Display video frames in the terminal using charpx",
+        description="Display video frames in the terminal using dapple",
     )
 
     parser.add_argument(

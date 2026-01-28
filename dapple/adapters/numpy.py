@@ -1,4 +1,4 @@
-"""Numpy array adapter for charpx.
+"""Numpy array adapter for dapple.
 
 Provides direct conversion from numpy arrays to Canvas.
 """
@@ -12,8 +12,8 @@ import numpy as np
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from charpx import Canvas
-    from charpx.renderers import Renderer
+    from dapple import Canvas
+    from dapple.renderers import Renderer
 
 
 class NumpyAdapter:
@@ -23,7 +23,7 @@ class NumpyAdapter:
 
     Example:
         >>> import numpy as np
-        >>> from charpx.adapters import NumpyAdapter
+        >>> from dapple.adapters import NumpyAdapter
         >>> array = np.random.rand(48, 80)
         >>> adapter = NumpyAdapter(array)
         >>> canvas = adapter.to_canvas()
@@ -59,7 +59,7 @@ class NumpyAdapter:
         Returns:
             New Canvas object.
         """
-        from charpx import Canvas
+        from dapple import Canvas
 
         if self._array.ndim == 3:
             # RGB array - compute luminance for bitmap
@@ -94,7 +94,7 @@ def from_array(
 
     Example:
         >>> import numpy as np
-        >>> from charpx.adapters import from_array
+        >>> from dapple.adapters import from_array
         >>> array = np.random.rand(48, 80)
         >>> canvas = from_array(array)
     """

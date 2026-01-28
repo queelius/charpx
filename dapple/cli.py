@@ -1,6 +1,6 @@
-"""charpx CLI - terminal image viewer.
+"""dapple CLI - terminal image viewer.
 
-This CLI is deprecated in favor of imgcat. Install with: pip install charpx[imgcat]
+This CLI is deprecated in favor of imgcat. Install with: pip install dapple[imgcat]
 """
 
 from __future__ import annotations
@@ -16,8 +16,8 @@ def main() -> None:
     except ImportError:
         # Fall back to basic implementation if imgcat not installed
         print(
-            "The charpx CLI has moved to imgcat.\n"
-            "Install with: pip install charpx[imgcat]\n"
+            "The dapple CLI has moved to imgcat.\n"
+            "Install with: pip install dapple[imgcat]\n"
             "Then run: imgcat image.jpg",
             file=sys.stderr,
         )

@@ -12,9 +12,9 @@ import sys
 
 import numpy as np
 
-from charpx import braille, quadrants, sextants, ascii, sixel, kitty
-from charpx.canvas import Canvas
-from charpx.renderers import Renderer
+from dapple import braille, quadrants, sextants, ascii, sixel, kitty
+from dapple.canvas import Canvas
+from dapple.renderers import Renderer
 
 # Available renderers mapping
 RENDERERS: dict[str, Renderer] = {

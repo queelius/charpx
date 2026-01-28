@@ -1,13 +1,13 @@
 # vidcat
 
-Terminal video frame viewer built on [charpx](https://github.com/spinoza/charpx).
+Terminal video frame viewer built on [dapple](https://github.com/spinoza/dapple).
 
 Extracts frames from video files and renders them to the terminal using various rendering methods (braille, quadrants, sixel, kitty, etc.).
 
 ## Installation
 
 ```bash
-pip install charpx[vidcat]
+pip install dapple[vidcat]
 # or standalone
 pip install vidcat
 ```
@@ -116,7 +116,7 @@ to_asciinema("video.mp4", "output.cast", fps=15, renderer="braille")
 ## Requirements
 
 - Python 3.10+
-- charpx
+- dapple
 - pillow
 - ffmpeg (system dependency)
 

@@ -1,11 +1,11 @@
-"""charpx - Unified terminal graphics library.
+"""dapple - Unified terminal graphics library.
 
 Render bitmaps to terminal character art using various formats:
 braille, quadrants, sextants, ASCII, sixel, kitty, and fingerprint.
 
 Example:
     >>> import numpy as np
-    >>> from charpx import Canvas, braille, quadrants, sextants
+    >>> from dapple import Canvas, braille, quadrants, sextants
     >>>
     >>> # Create canvas from bitmap
     >>> bitmap = np.random.rand(40, 80).astype(np.float32)
@@ -27,10 +27,10 @@ from __future__ import annotations
 __version__ = "0.1.0"
 
 # Core class
-from charpx.canvas import Canvas, from_array, from_pil
+from dapple.canvas import Canvas, from_array, from_pil
 
 # Renderers (instances for direct use)
-from charpx.renderers import (
+from dapple.renderers import (
     Renderer,
     BrailleRenderer,
     braille,
@@ -49,7 +49,7 @@ from charpx.renderers import (
 )
 
 # Preprocessing functions
-from charpx.preprocess import (
+from dapple.preprocess import (
     auto_contrast,
     floyd_steinberg,
     invert,
@@ -60,7 +60,7 @@ from charpx.preprocess import (
 )
 
 # Auto-detection
-from charpx.auto import (
+from dapple.auto import (
     Protocol,
     TerminalInfo,
     auto_renderer,

@@ -1,4 +1,4 @@
-"""Cairo surface adapter for charpx.
+"""Cairo surface adapter for dapple.
 
 Provides conversion from Cairo surfaces to Canvas.
 """
@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 if TYPE_CHECKING:
-    from charpx import Canvas
-    from charpx.renderers import Renderer
+    from dapple import Canvas
+    from dapple.renderers import Renderer
 
 
 class CairoAdapter:
@@ -21,7 +21,7 @@ class CairoAdapter:
 
     Example:
         >>> import cairo
-        >>> from charpx.adapters import CairoAdapter
+        >>> from dapple.adapters import CairoAdapter
         >>> surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 100, 100)
         >>> ctx = cairo.Context(surface)
         >>> ctx.set_source_rgb(1, 0, 0)
@@ -69,7 +69,7 @@ class CairoAdapter:
         """
         import cairo
 
-        from charpx import Canvas
+        from dapple import Canvas
 
         surface = self._surface
         width = surface.get_width()
@@ -148,7 +148,7 @@ def from_cairo(
 
     Example:
         >>> import cairo
-        >>> from charpx.adapters import from_cairo
+        >>> from dapple.adapters import from_cairo
         >>> surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 100, 100)
         >>> ctx = cairo.Context(surface)
         >>> # ... draw something ...

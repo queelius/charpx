@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-pdfcat is a terminal PDF viewer built on charpx. It renders PDF pages as images in the terminal using various charpx renderers (braille, quadrants, sixel, kitty, etc.).
+pdfcat is a terminal PDF viewer built on dapple. It renders PDF pages as images in the terminal using various dapple renderers (braille, quadrants, sixel, kitty, etc.).
 
-This is a small CLI tool in the `extras/` directory of the charpx project. For charpx-specific details (renderers, canvas API, preprocessing), see the parent project's CLAUDE.md at `/home/spinoza/github/beta/charpx/CLAUDE.md`.
+This is a small CLI tool in the `extras/` directory of the dapple project. For dapple-specific details (renderers, canvas API, preprocessing), see the parent project's CLAUDE.md at `/home/spinoza/github/beta/dapple/CLAUDE.md`.
 
 ## Commands
 
@@ -34,13 +34,13 @@ Single-module design in `pdfcat/pdfcat.py`:
 - **`PdfcatOptions`**: Dataclass holding all rendering options
 - **`render_pdf_to_images()`**: Uses pypdfium2 to convert PDF pages to temporary PNG files
 - **`pdfcat()`**: Main function that orchestrates the full pipeline
-- **`get_renderer()`**: Maps renderer names to charpx renderer instances with appropriate options
+- **`get_renderer()`**: Maps renderer names to dapple renderer instances with appropriate options
 - **`parse_page_range()`**: Parses page range strings like "1-3,5,7-9"
 
 The flow is:
 ```
 PDF → pypdfium2 → PIL Image → resize/aspect correction
-    → charpx Canvas → preprocessing (contrast/dither/invert)
+    → dapple Canvas → preprocessing (contrast/dither/invert)
     → renderer → stdout
 ```
 
@@ -48,7 +48,7 @@ The kitty renderer is handled specially: it uses the `columns` parameter for dis
 
 ## Dependencies
 
-- **charpx**: Parent library providing Canvas and all renderers
+- **dapple**: Parent library providing Canvas and all renderers
 - **pypdfium2**: PDF rendering to images
 - **pillow**: Image manipulation
 

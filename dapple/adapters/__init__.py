@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from charpx import Canvas
+    from dapple import Canvas
 
 
 @runtime_checkable
@@ -29,11 +29,11 @@ class Adapter(Protocol):
 
 
 # Import adapters for convenient access
-from charpx.adapters.numpy import NumpyAdapter, from_array
-from charpx.adapters.pil import PILAdapter, from_pil
-from charpx.adapters.matplotlib import MatplotlibAdapter, from_matplotlib
-from charpx.adapters.cairo import CairoAdapter, from_cairo
-from charpx.adapters.ansi import ANSIAdapter, from_ansi
+from dapple.adapters.numpy import NumpyAdapter, from_array
+from dapple.adapters.pil import PILAdapter, from_pil
+from dapple.adapters.matplotlib import MatplotlibAdapter, from_matplotlib
+from dapple.adapters.cairo import CairoAdapter, from_cairo
+from dapple.adapters.ansi import ANSIAdapter, from_ansi
 
 __all__ = [
     "Adapter",

@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "charpx"
+name = "dapple"
 version = "0.1.0"
 description = "Unified terminal graphics library - render bitmaps to braille, blocks, ASCII, sixel, and kitty"
 readme = "README.md"
@@ -64,21 +64,21 @@ dev = [
 ]
 # Everything
 all = [
-    "charpx[cli,adapters,dev]",
+    "dapple[cli,adapters,dev]",
 ]
 
 [project.scripts]
-charpx = "charpx.cli:main"
+dapple = "dapple.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/spinoza/charpx"
-Repository = "https://github.com/spinoza/charpx"
+Homepage = "https://github.com/spinoza/dapple"
+Repository = "https://github.com/spinoza/dapple"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["charpx*", "extras*"]
+include = ["dapple*", "extras*"]
 
-# Entry points for extras (when installed via pip install charpx[imgcat], etc.)
+# Entry points for extras (when installed via pip install dapple[imgcat], etc.)
 # Each extra also has its own standalone pyproject.toml for independent installation
 
 [tool.pytest.ini_options]
@@ -86,7 +86,7 @@ testpaths = ["tests"]
 addopts = "-v"
 
 [tool.coverage.run]
-source = ["charpx"]
+source = ["dapple"]
 branch = true
 
 [tool.coverage.report]

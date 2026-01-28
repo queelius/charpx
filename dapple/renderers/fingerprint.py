@@ -205,7 +205,7 @@ class FingerprintRenderer:
         font_path: Optional path to TTF/OTF font for glyph rendering.
 
     Example:
-        >>> from charpx import Canvas, fingerprint
+        >>> from dapple import Canvas, fingerprint
         >>> canvas = Canvas(np.random.rand(48, 80))
         >>> canvas.out(fingerprint)                     # to stdout
         >>> canvas.out(fingerprint(glyph_set="blocks")) # use blocks

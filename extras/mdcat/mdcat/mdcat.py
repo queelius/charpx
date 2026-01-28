@@ -1,7 +1,7 @@
 """mdcat - Terminal markdown viewer with inline images.
 
 Core implementation for rendering markdown to the terminal using Rich
-with charpx for inline image rendering.
+with dapple for inline image rendering.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from rich.segment import Segment
 from rich.text import Text
 
 if TYPE_CHECKING:
-    from charpx.renderers import Renderer
+    from dapple.renderers import Renderer
 
 
 @dataclass
@@ -122,8 +122,8 @@ class ImageResolver:
 
 def get_renderer(name: str, options: MdcatOptions) -> Renderer:
     """Get a renderer by name."""
-    from charpx import braille, quadrants, sextants, ascii, sixel, kitty, fingerprint
-    from charpx.auto import auto_renderer
+    from dapple import braille, quadrants, sextants, ascii, sixel, kitty, fingerprint
+    from dapple.auto import auto_renderer
 
     if name == "auto":
         return auto_renderer()
@@ -145,8 +145,8 @@ def get_renderer(name: str, options: MdcatOptions) -> Renderer:
     return renderer
 
 
-class CharpxImageItem(ImageItem):
-    """Renders images using charpx instead of placeholder."""
+class DappleImageItem(ImageItem):
+    """Renders images using dapple instead of placeholder."""
 
     _resolver: ImageResolver | None = None
     _renderer: Renderer | None = None
@@ -189,10 +189,10 @@ class CharpxImageItem(ImageItem):
             yield self._placeholder(reason="could not resolve")
             return
 
-        # Load and render image with charpx
+        # Load and render image with dapple
         try:
             from PIL import Image
-            from charpx.adapters.pil import from_pil
+            from dapple.adapters.pil import from_pil
         except ImportError:
             yield self._placeholder(reason="PIL not available")
             return
@@ -241,26 +241,26 @@ class CharpxImageItem(ImageItem):
         return Text(f"[{alt}]", style="dim")
 
 
-class CharpxMarkdown(Markdown):
-    """Markdown with charpx image support."""
+class DappleMarkdown(Markdown):
+    """Markdown with dapple image support."""
 
     elements = Markdown.elements.copy()
-    elements["image"] = CharpxImageItem
+    elements["image"] = DappleImageItem
 
 
 @contextmanager
-def charpx_rendering(
+def dapple_rendering(
     resolver: ImageResolver | None,
     renderer: Renderer | None,
     render_images: bool = True,
     image_width: int = 80,
 ):
-    """Context manager for CharpxImageItem configuration."""
+    """Context manager for DappleImageItem configuration."""
     try:
-        CharpxImageItem.configure(resolver, renderer, render_images, image_width)
+        DappleImageItem.configure(resolver, renderer, render_images, image_width)
         yield
     finally:
-        CharpxImageItem.reset()
+        DappleImageItem.reset()
 
 
 def mdcat(
@@ -327,8 +327,8 @@ def mdcat(
     resolver = ImageResolver(cache=cache, base_path=path)
 
     # Render
-    with charpx_rendering(resolver, rend, render_images, img_width):
-        md = CharpxMarkdown(
+    with dapple_rendering(resolver, rend, render_images, img_width):
+        md = DappleMarkdown(
             content,
             code_theme=code_theme,
             hyperlinks=hyperlinks,

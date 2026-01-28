@@ -36,7 +36,7 @@ class AsciiRenderer:
         invert: If True, invert brightness (dark becomes light).
 
     Example:
-        >>> from charpx import Canvas, ascii
+        >>> from dapple import Canvas, ascii
         >>> canvas = Canvas(np.random.rand(24, 40))
         >>> canvas.out(ascii)                       # to stdout
         >>> canvas.out(ascii(charset=" .oO@"))      # simple charset

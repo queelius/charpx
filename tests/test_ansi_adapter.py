@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from charpx.adapters.ansi import (
+from dapple.adapters.ansi import (
     ANSIAdapter,
     ColoredChar,
     detect_format,

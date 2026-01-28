@@ -1,11 +1,11 @@
 # imgcat
 
-Terminal image viewer built on [charpx](https://github.com/spinoza/charpx).
+Terminal image viewer built on [dapple](https://github.com/spinoza/dapple).
 
 ## Installation
 
 ```bash
-pip install charpx[imgcat]
+pip install dapple[imgcat]
 # or standalone
 pip install imgcat
 ```

@@ -137,7 +137,7 @@ def write_pipeline_output(state: PipelineState) -> None:
 def load_ansi_file(source: str) -> Image.Image:
     """Load ANSI terminal art from file and convert to PIL Image.
 
-    Uses charpx's from_ansi() adapter to parse braille, quadrant, sextant,
+    Uses dapple's from_ansi() adapter to parse braille, quadrant, sextant,
     or ASCII art back into a bitmap.
 
     Args:
@@ -146,7 +146,7 @@ def load_ansi_file(source: str) -> Image.Image:
     Returns:
         PIL Image in RGBA mode
     """
-    from charpx.adapters.ansi import from_ansi
+    from dapple.adapters.ansi import from_ansi
 
     with open(source, encoding="utf-8") as f:
         text = f.read()

@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "charpx developers"}
+    {name = "dapple developers"}
 ]
 keywords = ["terminal", "image", "manipulation", "pipeline", "unix", "braille", "visualization"]
 classifiers = [
@@ -29,16 +29,16 @@ classifiers = [
 dependencies = [
     "numpy>=1.20",
     "pillow>=9.0",
-    "charpx>=0.1.0",
+    "dapple>=0.1.0",
 ]
 
 [project.scripts]
 chop = "chop:main"
 
 [project.urls]
-Homepage = "https://github.com/anthropics/charpx"
-Repository = "https://github.com/anthropics/charpx"
-Documentation = "https://github.com/anthropics/charpx/tree/main/extras/chop"
+Homepage = "https://github.com/anthropics/dapple"
+Repository = "https://github.com/anthropics/dapple"
+Documentation = "https://github.com/anthropics/dapple/tree/main/extras/chop"
 
 [tool.setuptools.packages.find]
 where = ["."]

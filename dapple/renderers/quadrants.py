@@ -104,7 +104,7 @@ class QuadrantsRenderer:
         grayscale: Force grayscale output even for RGB input (default False).
 
     Example:
-        >>> from charpx import Canvas, quadrants
+        >>> from dapple import Canvas, quadrants
         >>> canvas = Canvas(np.random.rand(24, 40))
         >>> canvas.out(quadrants)                       # to stdout
         >>> canvas.out(quadrants(true_color=False))     # 256-color mode

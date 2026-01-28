@@ -1,4 +1,4 @@
-"""Terminal rendering utilities for chop CLI."""
+"""Terminal rendering utilities for chop CLI using dapple."""
 
 from __future__ import annotations
 
@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 
 from PIL import Image
 
-from charpx import braille, quadrants, sextants, ascii, sixel, kitty
-from charpx.auto import detect_kitty, detect_sixel
-from charpx.canvas import Canvas
-from charpx.renderers import Renderer
+from dapple import braille, quadrants, sextants, ascii, sixel, kitty
+from dapple.auto import detect_kitty, detect_sixel
+from dapple.canvas import Canvas
+from dapple.renderers import Renderer
 
 from chop.pipeline import image_to_arrays
 

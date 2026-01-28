@@ -90,6 +90,6 @@ When using `-j`, chop outputs JSON that preserves the image and processing histo
 }
 ```
 
-## Built on charpx
+## Built on dapple
 
-chop uses [charpx](https://github.com/anthropics/charpx) for terminal rendering. All charpx renderers are supported.
+chop uses [dapple](https://github.com/anthropics/dapple) for terminal rendering. All dapple renderers are supported.

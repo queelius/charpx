@@ -1,11 +1,11 @@
 # mdcat
 
-Terminal markdown viewer with inline images built on [charpx](https://github.com/spinoza/charpx) and [Rich](https://github.com/Textualize/rich).
+Terminal markdown viewer with inline images built on [dapple](https://github.com/spinoza/dapple) and [Rich](https://github.com/Textualize/rich).
 
 ## Installation
 
 ```bash
-pip install charpx[mdcat]
+pip install dapple[mdcat]
 # or standalone
 pip install mdcat
 ```
@@ -74,7 +74,7 @@ mdcat("README.md", code_theme="dracula", width=100)
 ## Features
 
 - **Rich markdown rendering**: Headers, lists, code blocks, tables
-- **Inline images**: Renders images using charpx (braille, quadrants, sixel, kitty)
+- **Inline images**: Renders images using dapple (braille, quadrants, sixel, kitty)
 - **Syntax highlighting**: Code blocks with Pygments themes
 - **Hyperlinks**: Clickable links in supported terminals
 - **Image caching**: Downloads cached for faster re-rendering
@@ -82,7 +82,7 @@ mdcat("README.md", code_theme="dracula", width=100)
 ## Requirements
 
 - Python 3.10+
-- charpx
+- dapple
 - pillow
 - rich
 

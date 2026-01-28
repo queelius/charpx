@@ -5,7 +5,7 @@ from io import StringIO
 import numpy as np
 import pytest
 
-from charpx import (
+from dapple import (
     braille,
     quadrants,
     sextants,
@@ -21,7 +21,7 @@ from charpx import (
     KittyRenderer,
     FingerprintRenderer,
 )
-from charpx.renderers import Renderer
+from dapple.renderers import Renderer
 
 
 def render_to_string(renderer, bitmap, colors=None):
@@ -552,7 +552,7 @@ class TestPreprocess:
 
     def test_auto_contrast(self):
         """auto_contrast stretches to 0-1 range."""
-        from charpx import auto_contrast
+        from dapple import auto_contrast
 
         bitmap = np.array([[0.3, 0.5], [0.4, 0.6]], dtype=np.float32)
         result = auto_contrast(bitmap)
@@ -561,7 +561,7 @@ class TestPreprocess:
 
     def test_auto_contrast_constant(self):
         """auto_contrast handles constant image."""
-        from charpx import auto_contrast
+        from dapple import auto_contrast
 
         bitmap = np.full((4, 4), 0.5, dtype=np.float32)
         result = auto_contrast(bitmap)
@@ -570,7 +570,7 @@ class TestPreprocess:
 
     def test_floyd_steinberg(self):
         """floyd_steinberg produces binary output."""
-        from charpx import floyd_steinberg
+        from dapple import floyd_steinberg
 
         bitmap = np.random.rand(10, 10).astype(np.float32)
         result = floyd_steinberg(bitmap)
@@ -580,7 +580,7 @@ class TestPreprocess:
 
     def test_invert(self):
         """invert flips brightness values."""
-        from charpx import invert
+        from dapple import invert
 
         bitmap = np.array([[0.0, 0.5], [0.75, 1.0]], dtype=np.float32)
         result = invert(bitmap)
@@ -589,7 +589,7 @@ class TestPreprocess:
 
     def test_threshold(self):
         """threshold produces binary output."""
-        from charpx import threshold
+        from dapple import threshold
 
         bitmap = np.array([[0.3, 0.7], [0.4, 0.6]], dtype=np.float32)
         result = threshold(bitmap, level=0.5)
@@ -598,7 +598,7 @@ class TestPreprocess:
 
     def test_gamma_correct(self):
         """gamma_correct applies power transformation."""
-        from charpx import gamma_correct
+        from dapple import gamma_correct
 
         bitmap = np.array([[0.5]], dtype=np.float32)
         result = gamma_correct(bitmap, gamma=2.2)
@@ -607,7 +607,7 @@ class TestPreprocess:
 
     def test_resize(self):
         """resize changes bitmap dimensions."""
-        from charpx import resize
+        from dapple import resize
 
         bitmap = np.random.rand(10, 20).astype(np.float32)
         result = resize(bitmap, 5, 10)
@@ -615,7 +615,7 @@ class TestPreprocess:
 
     def test_crop(self):
         """crop extracts rectangular region."""
-        from charpx.preprocess import crop
+        from dapple.preprocess import crop
 
         bitmap = np.arange(100).reshape(10, 10).astype(np.float32) / 100
         result = crop(bitmap, 2, 3, 5, 4)
@@ -626,7 +626,7 @@ class TestPreprocess:
 
     def test_crop_full_image(self):
         """crop with full dimensions returns copy."""
-        from charpx.preprocess import crop
+        from dapple.preprocess import crop
 
         bitmap = np.random.rand(10, 10).astype(np.float32)
         result = crop(bitmap, 0, 0, 10, 10)
@@ -635,7 +635,7 @@ class TestPreprocess:
 
     def test_crop_invalid_bounds(self):
         """crop raises error for out-of-bounds region."""
-        from charpx.preprocess import crop
+        from dapple.preprocess import crop
 
         bitmap = np.random.rand(10, 10).astype(np.float32)
         with pytest.raises(ValueError, match="exceeds bitmap bounds"):
@@ -643,7 +643,7 @@ class TestPreprocess:
 
     def test_crop_negative_position(self):
         """crop raises error for negative position."""
-        from charpx.preprocess import crop
+        from dapple.preprocess import crop
 
         bitmap = np.random.rand(10, 10).astype(np.float32)
         with pytest.raises(ValueError, match="must be non-negative"):
@@ -651,7 +651,7 @@ class TestPreprocess:
 
     def test_crop_zero_size(self):
         """crop raises error for zero dimensions."""
-        from charpx.preprocess import crop
+        from dapple.preprocess import crop
 
         bitmap = np.random.rand(10, 10).astype(np.float32)
         with pytest.raises(ValueError, match="must be positive"):
@@ -659,7 +659,7 @@ class TestPreprocess:
 
     def test_flip_horizontal(self):
         """flip horizontal reverses columns."""
-        from charpx.preprocess import flip
+        from dapple.preprocess import flip
 
         bitmap = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32)
         result = flip(bitmap, "h")
@@ -668,7 +668,7 @@ class TestPreprocess:
 
     def test_flip_vertical(self):
         """flip vertical reverses rows."""
-        from charpx.preprocess import flip
+        from dapple.preprocess import flip
 
         bitmap = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.float32)
         result = flip(bitmap, "v")
@@ -677,7 +677,7 @@ class TestPreprocess:
 
     def test_flip_invalid_direction(self):
         """flip raises error for invalid direction."""
-        from charpx.preprocess import flip
+        from dapple.preprocess import flip
 
         bitmap = np.random.rand(5, 5).astype(np.float32)
         with pytest.raises(ValueError, match="must be 'h' or 'v'"):
@@ -685,7 +685,7 @@ class TestPreprocess:
 
     def test_rotate_90(self):
         """rotate 90 degrees counter-clockwise."""
-        from charpx.preprocess import rotate
+        from dapple.preprocess import rotate
 
         bitmap = np.array([[1, 2], [3, 4]], dtype=np.float32)
         result = rotate(bitmap, 90)
@@ -694,7 +694,7 @@ class TestPreprocess:
 
     def test_rotate_180(self):
         """rotate 180 degrees."""
-        from charpx.preprocess import rotate
+        from dapple.preprocess import rotate
 
         bitmap = np.array([[1, 2], [3, 4]], dtype=np.float32)
         result = rotate(bitmap, 180)
@@ -703,7 +703,7 @@ class TestPreprocess:
 
     def test_rotate_270(self):
         """rotate 270 degrees counter-clockwise."""
-        from charpx.preprocess import rotate
+        from dapple.preprocess import rotate
 
         bitmap = np.array([[1, 2], [3, 4]], dtype=np.float32)
         result = rotate(bitmap, 270)
@@ -712,7 +712,7 @@ class TestPreprocess:
 
     def test_rotate_0(self):
         """rotate 0 degrees returns copy."""
-        from charpx.preprocess import rotate
+        from dapple.preprocess import rotate
 
         bitmap = np.random.rand(5, 5).astype(np.float32)
         result = rotate(bitmap, 0)
@@ -720,7 +720,7 @@ class TestPreprocess:
 
     def test_rotate_normalizes_angle(self):
         """rotate normalizes angles to 0-360."""
-        from charpx.preprocess import rotate
+        from dapple.preprocess import rotate
 
         bitmap = np.array([[1, 2], [3, 4]], dtype=np.float32)
         result_90 = rotate(bitmap, 90)

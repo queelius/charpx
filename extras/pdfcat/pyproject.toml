@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pdfcat"
 version = "0.1.0"
-description = "Terminal PDF viewer built on charpx"
+description = "Terminal PDF viewer built on dapple"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -26,7 +26,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "charpx>=0.1.0",
+    "dapple>=0.1.0",
     "pillow>=9.0",
     "pypdfium2>=4.0",
 ]
@@ -35,8 +35,8 @@ dependencies = [
 pdfcat = "pdfcat.pdfcat:main"
 
 [project.urls]
-Homepage = "https://github.com/spinoza/charpx"
-Repository = "https://github.com/spinoza/charpx"
+Homepage = "https://github.com/spinoza/dapple"
+Repository = "https://github.com/spinoza/dapple"
 
 [tool.setuptools.packages.find]
 where = ["."]

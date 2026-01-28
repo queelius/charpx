@@ -146,7 +146,7 @@ class KittyRenderer:
         rows: Display height in terminal rows (None = native pixel size).
 
     Example:
-        >>> from charpx import Canvas, kitty
+        >>> from dapple import Canvas, kitty
         >>> canvas = Canvas(np.random.rand(48, 80))
         >>> canvas.out(kitty)  # In supported terminal
         >>> canvas.out(kitty(columns=80))  # Scale to 80 columns wide

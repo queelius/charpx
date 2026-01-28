@@ -17,7 +17,7 @@ The JSON is tiny and human-readable:
 {"version": 2, "path": "photo.jpg", "ops": [["resize", ["50%"], {}], ["pad", [10], {}]]}
 ```
 
-chop is part of the charpx ecosystem and uses charpx renderers for terminal output.
+chop is part of the dapple ecosystem and uses dapple renderers for terminal output.
 
 ## Commands
 
@@ -62,7 +62,7 @@ The key design is **lazy evaluation**:
   - `to_json()` / `from_json()` - Version 2 format serialization
   - `read_pipeline_input()` / `write_pipeline_output()` - stdin/stdout handling
   - `load_image()` - Load from file, URL, or stdin
-  - `image_to_arrays()` - Convert PIL Image to numpy arrays for charpx
+  - `image_to_arrays()` - Convert PIL Image to numpy arrays for dapple
 
 - **`chop/operations.py`**: Image transformation functions
   - `op_*` functions - Each takes PIL Image, returns PIL Image
@@ -74,8 +74,8 @@ The key design is **lazy evaluation**:
   - `handle_output()` - Decides output based on flags and TTY detection
   - Calls `materialize()` when rendering or saving
 
-- **`chop/render.py`**: Terminal rendering via charpx
-  - `RENDERERS` dict - Maps names to charpx renderer instances
+- **`chop/render.py`**: Terminal rendering via dapple
+  - `RENDERERS` dict - Maps names to dapple renderer instances
   - `render_to_terminal()` - Auto-fits image to terminal size and renders
   - `auto_detect_renderer()` - Detects kitty/sixel/sextants
 
@@ -103,7 +103,7 @@ else (piped):         → JSON output (path + ops)
 - **Inspectable pipeline**: Can `cat` the JSON to see what ops will be applied
 - **Composable**: Operations are data, can be stored/replayed
 - **PIL Images at materialize time**: Operations work with PIL Images in RGBA mode
-- **Conversion at render time**: `image_to_arrays()` converts to numpy only for charpx
+- **Conversion at render time**: `image_to_arrays()` converts to numpy only for dapple
 
 ## Available Operations
 
@@ -138,4 +138,4 @@ else (piped):         → JSON output (path + ops)
 
 - numpy>=1.20
 - pillow>=9.0
-- charpx>=0.1.0 (parent library)
+- dapple>=0.1.0 (parent library)

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 if TYPE_CHECKING:
-    from charpx import Canvas
+    from dapple import Canvas
     from numpy.typing import NDArray
 
 
@@ -373,12 +373,12 @@ def from_ansi(
         ValueError: If format cannot be detected or is unsupported.
 
     Example:
-        >>> from charpx.adapters.ansi import from_ansi
+        >>> from dapple.adapters.ansi import from_ansi
         >>> canvas = from_ansi("⠿⠿⠿")
         >>> canvas.bitmap.shape
         (4, 6)
     """
-    from charpx import Canvas
+    from dapple import Canvas
 
     if format is None:
         format = detect_format(text)
@@ -472,7 +472,7 @@ class ANSIAdapter:
         charset: ASCII charset for density mapping
 
     Example:
-        >>> from charpx.adapters.ansi import ANSIAdapter
+        >>> from dapple.adapters.ansi import ANSIAdapter
         >>> adapter = ANSIAdapter(format="braille")
         >>> canvas = adapter.parse("⠿⠿⠿")
     """

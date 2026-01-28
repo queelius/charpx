@@ -1,4 +1,4 @@
-"""imgcat - Terminal image viewer built on charpx.
+"""imgcat - Terminal image viewer built on dapple.
 
 A specialized tool for viewing images in the terminal using various
 rendering methods (braille, quadrants, sixel, kitty, etc.).

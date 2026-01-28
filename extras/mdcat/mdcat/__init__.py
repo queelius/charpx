@@ -1,7 +1,7 @@
 """mdcat - Terminal markdown viewer with inline images.
 
 Renders markdown files to the terminal using Rich for text formatting
-and charpx for inline images.
+and dapple for inline images.
 
 Example:
     $ mdcat README.md              # View markdown file

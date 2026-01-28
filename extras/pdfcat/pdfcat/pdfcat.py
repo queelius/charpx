@@ -1,6 +1,6 @@
 """pdfcat - Terminal PDF viewer.
 
-Core implementation for rendering PDF pages to the terminal using charpx.
+Core implementation for rendering PDF pages to the terminal using dapple.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, TextIO
 
 if TYPE_CHECKING:
-    from charpx.renderers import Renderer
+    from dapple.renderers import Renderer
 
 # pypdfium2 is optional
 try:
@@ -160,7 +160,7 @@ def render_pdf_to_images(
 
 def get_renderer(name: str, options: PdfcatOptions) -> Renderer:
     """Get a renderer by name with appropriate configuration."""
-    from charpx import (
+    from dapple import (
         ascii,
         braille,
         fingerprint,
@@ -169,7 +169,7 @@ def get_renderer(name: str, options: PdfcatOptions) -> Renderer:
         sextants,
         sixel,
     )
-    from charpx.auto import auto_renderer
+    from dapple.auto import auto_renderer
 
     if name == "auto":
         return auto_renderer(
@@ -244,23 +244,23 @@ def pdfcat(
     """
     if not HAS_PYPDFIUM2:
         print(
-            "pdfcat requires pypdfium2. Install with: pip install charpx[pdfcat]",
+            "pdfcat requires pypdfium2. Install with: pip install dapple[pdfcat]",
             file=sys.stderr,
         )
         return False
 
     try:
         from PIL import Image
-        from charpx.adapters.pil import from_pil, load_image
+        from dapple.adapters.pil import from_pil, load_image
     except ImportError:
         print(
-            "pdfcat requires pillow. Install with: pip install charpx[pdfcat]",
+            "pdfcat requires pillow. Install with: pip install dapple[pdfcat]",
             file=sys.stderr,
         )
         return False
 
-    from charpx import auto_contrast as ac, floyd_steinberg, invert as inv
-    from charpx.canvas import Canvas
+    from dapple import auto_contrast as ac, floyd_steinberg, invert as inv
+    from dapple.canvas import Canvas
 
     path = Path(pdf_path)
     if not path.exists():
@@ -303,7 +303,7 @@ def pdfcat(
 
     # For kitty, configure renderer to use terminal columns for scaling
     if renderer == "kitty":
-        from charpx import kitty as kitty_renderer
+        from dapple import kitty as kitty_renderer
         rend = kitty_renderer(columns=char_width)
 
     try:
@@ -381,7 +381,7 @@ def view(pdf_path: str | Path, **kwargs) -> bool:
 # Claude Code skill content
 SKILL_CONTENT = '''# pdfcat - Terminal PDF Viewer
 
-pdfcat renders PDF documents as images in the terminal using charpx.
+pdfcat renders PDF documents as images in the terminal using dapple.
 
 ## Usage
 
@@ -473,7 +473,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(
         prog="pdfcat",
-        description="Display PDF pages in the terminal using charpx",
+        description="Display PDF pages in the terminal using dapple",
     )
 
     # Main command arguments

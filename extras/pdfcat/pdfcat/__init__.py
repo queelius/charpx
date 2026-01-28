@@ -1,4 +1,4 @@
-"""pdfcat - Terminal PDF viewer built on charpx.
+"""pdfcat - Terminal PDF viewer built on dapple.
 
 Renders PDF pages as images in the terminal using various
 rendering methods (braille, quadrants, sixel, kitty, etc.).
