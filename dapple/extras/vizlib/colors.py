@@ -18,9 +18,9 @@ NAMED_COLORS: dict[str, tuple[float, float, float]] = {
 
 # Auto-cycling palette for multi-series charts
 COLOR_PALETTE: list[tuple[float, float, float]] = [
+    NAMED_COLORS["green"],   # green first — brighter on dark terminals than cyan
     NAMED_COLORS["cyan"],
     NAMED_COLORS["red"],
-    NAMED_COLORS["green"],
     NAMED_COLORS["yellow"],
     NAMED_COLORS["magenta"],
     NAMED_COLORS["orange"],

@@ -328,12 +328,23 @@ class TestCLI:
             text=True,
         )
 
-    def test_json_pretty_print(self):
+    def test_default_is_tree(self):
         data = json.dumps({"name": "Alice", "age": 30})
         result = self._run([], stdin=data)
         assert result.returncode == 0
         assert "Alice" in result.stdout
         assert "age" in result.stdout
+        # Default output is tree format (box-drawing), not raw JSON
+        import pytest
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(result.stdout)
+
+    def test_json_flag(self):
+        data = json.dumps({"name": "Alice", "age": 30})
+        result = self._run(["--json", "--no-color"], stdin=data)
+        assert result.returncode == 0
+        parsed = json.loads(result.stdout)
+        assert parsed["name"] == "Alice"
 
     def test_dot_path_query(self):
         data = json.dumps({"db": {"host": "localhost"}})
@@ -353,7 +364,7 @@ class TestCLI:
         # The issue: argparse sees the query as the file arg.
         # Let's test with explicit -- separator or different approach.
         # Actually, let's just test the basic display for now
-        result = self._run(["--no-color"], stdin=data)
+        result = self._run(["--json", "--no-color"], stdin=data)
         assert result.returncode == 0
         parsed = json.loads(result.stdout)
         assert parsed["db"]["host"] == "myhost"
@@ -375,7 +386,7 @@ class TestCLI:
 
     def test_head_jsonl(self):
         jsonl = '{"v":1}\n{"v":2}\n{"v":3}\n{"v":4}\n{"v":5}'
-        result = self._run(["--head", "2", "--no-color"], stdin=jsonl)
+        result = self._run(["--head", "2", "--json", "--no-color"], stdin=jsonl)
         assert result.returncode == 0
         # Should only show first 2 records
         parsed = json.loads(result.stdout)
@@ -384,7 +395,7 @@ class TestCLI:
 
     def test_tail_jsonl(self):
         jsonl = '{"v":1}\n{"v":2}\n{"v":3}\n{"v":4}\n{"v":5}'
-        result = self._run(["--tail", "2", "--no-color"], stdin=jsonl)
+        result = self._run(["--tail", "2", "--json", "--no-color"], stdin=jsonl)
         assert result.returncode == 0
         parsed = json.loads(result.stdout)
         assert len(parsed) == 2
@@ -402,3 +413,34 @@ class TestCLI:
         result = self._run([], stdin="{not valid json}")
         assert result.returncode != 0
         assert "error" in result.stderr.lower() or "Error" in result.stderr
+
+    def test_spark_nonexistent_field_clean_error(self):
+        """--spark with a path that yields no numeric values should print a clean error."""
+        jsonl = '{"a":"x"}\n{"a":"y"}'
+        result = self._run(["--spark", ".bogus"], stdin=jsonl)
+        assert result.returncode != 0
+        assert "datacat:" in result.stderr
+        assert "No numeric values" in result.stderr
+        # Should NOT show a Python traceback
+        assert "Traceback" not in result.stderr
+
+    def test_spark_with_color_flag(self):
+        """--spark with --color should render without error."""
+        jsonl = '{"v":1}\n{"v":2}\n{"v":3}'
+        result = self._run(["--spark", ".v", "--color", "red"], stdin=jsonl)
+        assert result.returncode == 0
+
+    def test_color_invalid_name_clean_error(self):
+        """--color with an unrecognized name should print a clean error."""
+        jsonl = '{"v":1}\n{"v":2}'
+        result = self._run(["--spark", ".v", "--color", "neonpurple"], stdin=jsonl)
+        assert result.returncode != 0
+        assert "datacat:" in result.stderr
+        assert "Unknown color" in result.stderr
+        assert "Traceback" not in result.stderr
+
+    def test_color_hex_value(self):
+        """--color with hex value should work."""
+        jsonl = '{"v":1}\n{"v":2}\n{"v":3}'
+        result = self._run(["--spark", ".v", "--color", "#ff0000"], stdin=jsonl)
+        assert result.returncode == 0

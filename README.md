@@ -6,7 +6,7 @@ dapple is a unified terminal graphics library. One Canvas API, multiple renderer
 
 ## Why a Unified Library?
 
-Terminal graphics tools are fragmented. pixdot does braille. cel does quadrant blocks. chafa handles sixel. Each has its own API, its own conventions.
+Terminal graphics tools are fragmented. One library does braille. Another does quadrant blocks. A third handles sixel. Each has its own API, its own conventions.
 
 dapple unifies these approaches:
 
@@ -21,11 +21,15 @@ dapple unifies these approaches:
 # Core library (numpy only)
 pip install dapple
 
-# With CLI support (adds pillow)
-pip install dapple[cli]
+# Individual CLI tools
+pip install dapple[imgcat]          # terminal image viewer
+pip install dapple[pdfcat]          # PDF viewer (adds pypdfium2)
+pip install dapple[mdcat]           # markdown viewer (adds rich)
 
-# With all adapters (matplotlib, cairo)
-pip install dapple[all]
+# Bundles
+pip install dapple[all-tools]       # all CLI tools
+pip install dapple[adapters]        # PIL + matplotlib adapters
+pip install dapple[dev]             # development (tests + all deps)
 ```
 
 ## Quick Start
@@ -237,22 +241,53 @@ cropped = canvas.crop(x1=10, y1=10, x2=50, y2=40)
 inverted = canvas.with_invert()
 ```
 
-## CLI
+## CLI Tools
+
+dapple ships several command-line tools, each installed as a standalone entry point:
 
 ```bash
-# Basic usage
-dapple photo.jpg                     # Default: quadrants
-dapple photo.jpg -r braille          # Braille output
-dapple photo.jpg -r sixel            # Sixel output
+imgcat photo.jpg                    # view image in terminal
+imgcat photo.jpg -r braille         # braille output
+imgcat photo.jpg --dither           # Floyd-Steinberg dithering
+imgcat photo.jpg -w 120             # custom width
 
-# Options
-dapple photo.jpg -w 120              # Custom width
-dapple photo.jpg --dither            # Floyd-Steinberg dithering
-dapple photo.jpg --contrast          # Auto-contrast
-dapple photo.jpg --invert            # Invert colors
+pdfcat document.pdf                 # view PDF pages
+pdfcat document.pdf --pages 1-3     # specific pages
+pdfcat document.pdf --dpi 300       # higher resolution
 
-# Output
-dapple photo.jpg -o output.txt       # Save to file
+mdcat README.md                     # render markdown with formatting
+mdcat README.md --no-images         # skip inline images
+
+funcat "sin(x)" -r braille         # plot function
+funcat "x**2" --xmin -5 --xmax 5   # custom range
+
+vidcat video.mp4                    # play video in terminal
+
+csvcat data.csv --bar revenue       # chart CSV columns
+datacat data.jsonl --spark value    # sparkline from JSONL
+```
+
+Each tool supports `-r` / `--renderer` to select the output format (braille, quadrants, sextants, ascii, sixel, kitty, fingerprint) and common preprocessing flags (`--dither`, `--contrast`, `--invert`).
+
+## Auto-Detection
+
+dapple can detect terminal capabilities and select the best renderer automatically:
+
+```python
+from dapple.auto import auto_renderer, detect_terminal, render_image
+
+# Detect terminal capabilities
+info = detect_terminal()
+print(info.protocol)       # Protocol.KITTY, Protocol.SIXEL, etc.
+print(info.color_support)  # True/False
+
+# Get the best renderer for this terminal
+renderer = auto_renderer()             # kitty > sixel > quadrants > braille > ascii
+renderer = auto_renderer(plain=True)   # force ASCII (for pipes)
+
+# One-liner: load, detect, render
+render_image("photo.jpg")
+render_image("photo.jpg", width=640)
 ```
 
 ## When to Use Each Renderer
@@ -266,16 +301,6 @@ dapple photo.jpg -o output.txt       # Save to file
 | High-quality local display | `sixel` (xterm), `kitty` (kitty/wezterm) |
 | Universal compatibility | `ascii` |
 | Artistic/experimental | `fingerprint` |
-
-## Relationship to pixdot and cel
-
-dapple unifies and extends the terminal graphics ecosystem:
-
-- **pixdot**: Focused braille renderer (~50 lines). dapple's braille renderer provides the same output.
-- **cel**: Focused quadrant renderer with ANSI colors. dapple's quadrants renderer provides the same output.
-- **dapple**: The unified library combining all approaches with a consistent API.
-
-Use the focused libraries (pixdot, cel) for minimal dependencies and pedagogical clarity. Use dapple when you want flexibility to switch between renderers or need multiple output formats.
 
 ## License
 

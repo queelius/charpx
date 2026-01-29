@@ -87,19 +87,94 @@ class TestSkillInstall:
         assert "Specify --local or --global" in captured.err
 
 
+class TestGetRendererAll:
+    """Extended tests for get_renderer covering all renderers."""
+
+    def test_sextants_renderer(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions()
+        renderer = get_renderer("sextants", opts)
+        assert hasattr(renderer, "render")
+        assert renderer.cell_width == 2
+        assert renderer.cell_height == 3
+
+    def test_ascii_renderer(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions()
+        renderer = get_renderer("ascii", opts)
+        assert hasattr(renderer, "render")
+        assert renderer.cell_width == 1
+
+    def test_sixel_renderer(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions()
+        renderer = get_renderer("sixel", opts)
+        assert hasattr(renderer, "render")
+
+    def test_kitty_renderer(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions()
+        renderer = get_renderer("kitty", opts)
+        assert hasattr(renderer, "render")
+
+    def test_fingerprint_renderer(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions()
+        renderer = get_renderer("fingerprint", opts)
+        assert hasattr(renderer, "render")
+
+    def test_braille_no_color(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions(no_color=True)
+        renderer = get_renderer("braille", opts)
+        assert renderer.color_mode == "none"
+
+    def test_braille_grayscale(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions(grayscale=True)
+        renderer = get_renderer("braille", opts)
+        assert renderer.color_mode == "grayscale"
+
+    def test_quadrants_grayscale(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions(grayscale=True)
+        renderer = get_renderer("quadrants", opts)
+        assert renderer.grayscale is True
+
+    def test_sextants_grayscale(self):
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
+
+        opts = ImgcatOptions(grayscale=True)
+        renderer = get_renderer("sextants", opts)
+        assert renderer.grayscale is True
+
+
 class TestImgcatFunction:
     """Tests for imgcat function."""
+
+    def _make_test_image(self, tmpdir, name="test.png", size=(20, 20), color="red"):
+        """Create a test image and return its path."""
+        from PIL import Image
+
+        img = Image.new("RGB", size, color=color)
+        img_path = Path(tmpdir) / name
+        img.save(img_path)
+        return img_path
 
     def test_imgcat_with_test_image(self):
         """Test imgcat with a simple generated image."""
         from dapple.extras.imgcat import imgcat
-        from PIL import Image
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Create a simple test image
-            img = Image.new("RGB", (10, 10), color="red")
-            img_path = Path(tmpdir) / "test.png"
-            img.save(img_path)
+            img_path = self._make_test_image(tmpdir)
 
             # Render to string buffer
             output = StringIO()
@@ -107,3 +182,168 @@ class TestImgcatFunction:
 
             result = output.getvalue()
             assert len(result) > 0  # Should have some output
+
+    def test_imgcat_quadrants(self):
+        """Test imgcat with quadrants renderer."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="quadrants", width=20, dest=output)
+            result = output.getvalue()
+            assert len(result) > 0
+            assert "\033[" in result  # ANSI color codes
+
+    def test_imgcat_sextants(self):
+        """Test imgcat with sextants renderer."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="sextants", width=20, dest=output)
+            result = output.getvalue()
+            assert len(result) > 0
+
+    def test_imgcat_ascii(self):
+        """Test imgcat with ascii renderer."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="ascii", width=20, dest=output)
+            result = output.getvalue()
+            assert len(result) > 0
+
+    def test_imgcat_dither(self):
+        """Test imgcat with dither preprocessing."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="braille", width=20, dither=True, dest=output)
+            assert len(output.getvalue()) > 0
+
+    def test_imgcat_contrast(self):
+        """Test imgcat with contrast preprocessing."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="braille", width=20, contrast=True, dest=output)
+            assert len(output.getvalue()) > 0
+
+    def test_imgcat_invert(self):
+        """Test imgcat with invert preprocessing."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="braille", width=20, invert=True, dest=output)
+            assert len(output.getvalue()) > 0
+
+    def test_imgcat_no_color(self):
+        """Test imgcat with no_color flag."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="braille", width=20, no_color=True, dest=output)
+            assert len(output.getvalue()) > 0
+
+    def test_imgcat_grayscale(self):
+        """Test imgcat with grayscale flag."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir)
+            output = StringIO()
+            imgcat(img_path, renderer="quadrants", width=20, grayscale=True, dest=output)
+            assert len(output.getvalue()) > 0
+
+    def test_imgcat_custom_width_and_height(self):
+        """Test imgcat with custom width and height."""
+        from dapple.extras.imgcat import imgcat
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img_path = self._make_test_image(tmpdir, size=(40, 40))
+            output = StringIO()
+            imgcat(img_path, renderer="braille", width=30, height=15, dest=output)
+            assert len(output.getvalue()) > 0
+
+
+class TestImgcatCLI:
+    """Tests for imgcat CLI."""
+
+    def test_help_output(self):
+        import subprocess
+
+        result = subprocess.run(
+            ["python", "-m", "dapple.extras.imgcat.imgcat", "--help"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "imgcat" in result.stdout.lower() or "image" in result.stdout.lower()
+
+    def test_nonexistent_file(self):
+        import subprocess
+
+        result = subprocess.run(
+            ["python", "-m", "dapple.extras.imgcat.imgcat", "/nonexistent/file.png"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode != 0
+
+    def test_multiple_images(self):
+        """Test CLI with multiple image arguments."""
+        import subprocess
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for name in ["a.png", "b.png"]:
+                img = Image.new("RGB", (10, 10), color="blue")
+                img.save(Path(tmpdir) / name)
+
+            result = subprocess.run(
+                [
+                    "python", "-m", "dapple.extras.imgcat.imgcat",
+                    "-r", "braille", "-w", "20",
+                    str(Path(tmpdir) / "a.png"),
+                    str(Path(tmpdir) / "b.png"),
+                ],
+                capture_output=True, text=True,
+            )
+            assert result.returncode == 0
+            assert len(result.stdout) > 0
+
+    def test_output_file(self):
+        """Test CLI with output file flag."""
+        import subprocess
+
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            img = Image.new("RGB", (10, 10), color="green")
+            img_path = Path(tmpdir) / "test.png"
+            img.save(img_path)
+            out_path = Path(tmpdir) / "output.txt"
+
+            result = subprocess.run(
+                [
+                    "python", "-m", "dapple.extras.imgcat.imgcat",
+                    "-r", "braille", "-w", "20",
+                    "-o", str(out_path),
+                    str(img_path),
+                ],
+                capture_output=True, text=True,
+            )
+            assert result.returncode == 0
+            assert out_path.exists()
+            assert len(out_path.read_text()) > 0

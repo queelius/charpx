@@ -11,6 +11,7 @@ The library addresses the fragmentation in terminal graphics: instead of separat
 **Relationship to other libraries:**
 - **pixdot** (../pixdot): Focused braille renderer. dapple's `braille` renderer provides equivalent output.
 - **cel** (../cel): Focused quadrant block renderer. dapple's `quadrants` renderer provides equivalent output.
+- **chop** (../chop): Standalone image manipulation CLI (extracted from dapple extras). Pure PIL/numpy, no dapple dependency. Designed for piping: `chop load img.png | chop resize 50% | chop save out.png`
 - **dapple**: The unified library combining all approaches.
 
 ## Commands
@@ -86,6 +87,12 @@ The codebase has a modular structure:
   - `threshold(bitmap, level)` - Binary threshold
   - `resize(bitmap, height, width)` - Bilinear interpolation
 
+- **`dapple/auto.py`**: Terminal capability detection and renderer auto-selection
+  - `detect_terminal()` - Returns `TerminalInfo` with detected protocol and capabilities
+  - `auto_renderer()` - Returns best `Renderer` for the current terminal (kitty > sixel > quadrants > braille > ascii)
+  - `render_image(path)` - Convenience: load image, auto-detect terminal, render
+  - `Protocol` enum: KITTY, SIXEL, QUADRANTS, BRAILLE, ASCII
+
 ### Adapters (optional dependencies)
 
 - **`dapple/adapters/`**: Library integrations
@@ -93,6 +100,7 @@ The codebase has a modular structure:
   - `pil.py` - PILAdapter, from_pil, load_image
   - `matplotlib.py` - MatplotlibAdapter, from_matplotlib
   - `cairo.py` - CairoAdapter, from_cairo
+  - `ansi.py` - ANSIAdapter, from_ansi (parse ANSI escape sequences into Canvas)
 
 ### Extras (`dapple/extras/`)
 
@@ -172,16 +180,18 @@ braille(threshold=0.3, color_mode="grayscale").render(...)
 
 ```
 tests/
-  test_canvas.py     # Canvas class, composition, conversion
-  test_renderers.py  # All renderers, preprocessing functions
-  test_imgcat.py     # imgcat terminal image viewer
-  test_funcat.py     # funcat function plotter
-  test_pdfcat.py     # pdfcat PDF viewer
-  test_mdcat.py      # mdcat markdown viewer
-  test_vidcat.py     # vidcat video player
-  test_csvcat.py     # csvcat CSV viewer
-  test_datacat.py    # datacat JSON viewer
-  test_vizlib.py     # vizlib chart primitives
+  test_canvas.py         # Canvas class, composition, conversion
+  test_renderers.py      # All renderers, preprocessing functions
+  test_auto.py           # Terminal detection and auto_renderer
+  test_ansi_adapter.py   # ANSI escape sequence parsing
+  test_imgcat.py         # imgcat terminal image viewer
+  test_funcat.py         # funcat function plotter
+  test_pdfcat.py         # pdfcat PDF viewer
+  test_mdcat.py          # mdcat markdown viewer
+  test_vidcat.py         # vidcat video player
+  test_csvcat.py         # csvcat CSV viewer
+  test_datacat.py        # datacat JSON viewer
+  test_vizlib.py         # vizlib chart primitives
 ```
 
 Run with: `pytest tests/ -v`

@@ -43,7 +43,12 @@ def _build_parser() -> argparse.ArgumentParser:
     display_group.add_argument(
         "--tree",
         action="store_true",
-        help="Show tree view with box-drawing characters",
+        help="Show tree view with box-drawing characters (default)",
+    )
+    display_group.add_argument(
+        "--json",
+        action="store_true",
+        help="Show syntax-colored JSON instead of tree",
     )
     display_group.add_argument(
         "--no-color",
@@ -115,6 +120,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "-o", "--output",
         metavar="FILE",
         help="Write output to file instead of stdout",
+    )
+    plot_opts.add_argument(
+        "--color",
+        type=str,
+        help="Chart color (name or #hex, e.g. green, #ff0000)",
     )
 
     return parser
@@ -241,14 +251,14 @@ def _run_display_mode(data, args: argparse.Namespace) -> None:
     if args.query:
         data = dot_path_query(data, args.query)
 
-    # Choose display format
+    # Choose display format (default: tree)
     if args.table and isinstance(data, list):
         headers, rows = flatten_to_table(data)
         output = _format_table_output(headers, rows, cycle_colors=args.cycle_color)
-    elif args.tree:
-        output = format_tree(data)
-    else:
+    elif args.json:
         output = format_json(data, colorize=not args.no_color)
+    else:
+        output = format_tree(data)
 
     if args.output:
         with open(args.output, "w") as f:
@@ -261,10 +271,20 @@ def _run_plot_mode(data, args: argparse.Namespace) -> None:
     """Render a chart from JSON data using vizlib."""
     from dapple.extras.vizlib import get_renderer, get_terminal_size, pixel_dimensions
     from dapple.extras.vizlib.charts import bar_chart, histogram, line_plot, sparkline
+    from dapple.extras.vizlib.colors import parse_color
 
     if not isinstance(data, list):
         print("datacat: plot mode requires JSONL input (array of records)", file=sys.stderr)
         sys.exit(1)
+
+    # Parse --color if provided
+    color = None
+    if args.color:
+        try:
+            color = parse_color(args.color)
+        except ValueError as e:
+            print(f"datacat: {e}", file=sys.stderr)
+            sys.exit(1)
 
     renderer = get_renderer(args.renderer)
     term_cols, term_lines = get_terminal_size()
@@ -277,20 +297,23 @@ def _run_plot_mode(data, args: argparse.Namespace) -> None:
     try:
         if args.spark:
             values = extract_field_values(data, args.spark)
-            canvas = sparkline(values, width=px_w, height=px_h)
+            canvas = sparkline(values, width=px_w, height=px_h, color=color)
         elif args.plot:
             values = extract_field_values(data, args.plot)
-            canvas = line_plot(values, width=px_w, height=px_h)
+            canvas = line_plot(values, width=px_w, height=px_h, color=color)
         elif args.bar:
             labels, counts = extract_field_categories(data, args.bar)
-            canvas = bar_chart(labels, counts, width=px_w, height=px_h)
+            canvas = bar_chart(labels, counts, width=px_w, height=px_h, color=color)
         elif args.histogram:
             values = extract_field_values(data, args.histogram)
-            canvas = histogram(values, width=px_w, height=px_h)
+            canvas = histogram(values, width=px_w, height=px_h, color=color)
         else:
             return
 
         canvas.out(renderer, dest=dest)
+    except ValueError as e:
+        print(f"datacat: {e}", file=sys.stderr)
+        sys.exit(1)
     finally:
         if args.output and dest is not sys.stdout:
             dest.close()

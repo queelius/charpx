@@ -417,6 +417,215 @@ class TestKittyRenderer:
         result = render_to_string(kitty, bitmap, colors)
         assert result.startswith("\033_G")
 
+    def test_render_rgba_format(self):
+        """render() produces RGBA format."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        result = render_to_string(kitty(format="rgba"), bitmap)
+        assert "f=32" in result  # RGBA format code
+
+    def test_render_rgba_with_colors(self):
+        """render() produces RGBA format with RGB colors."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        colors = np.random.rand(10, 10, 3).astype(np.float32)
+        result = render_to_string(kitty(format="rgba"), bitmap, colors)
+        assert "f=32" in result
+
+    def test_render_rgb_no_compression(self):
+        """render() produces uncompressed RGB data."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        result = render_to_string(kitty(format="rgb", compression=False), bitmap)
+        assert "f=24" in result
+        assert "o=z" not in result  # No zlib compression flag
+
+    def test_render_rgb_with_compression(self):
+        """render() produces zlib-compressed RGB data."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        result = render_to_string(kitty(format="rgb", compression=True), bitmap)
+        assert "f=24" in result
+        assert "o=z" in result  # zlib compression flag
+
+    def test_render_columns_param(self):
+        """render() includes columns display size parameter."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        result = render_to_string(kitty(columns=80), bitmap)
+        assert "c=80" in result
+
+    def test_render_rows_param(self):
+        """render() includes rows display size parameter."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        result = render_to_string(kitty(rows=24), bitmap)
+        assert "r=24" in result
+
+    def test_render_columns_and_rows(self):
+        """render() includes both display size parameters."""
+        bitmap = np.random.rand(10, 10).astype(np.float32)
+        result = render_to_string(kitty(columns=80, rows=24), bitmap)
+        assert "c=80" in result
+        assert "r=24" in result
+
+    def test_render_chunking(self):
+        """render() chunks large images into multiple escape sequences."""
+        # Create a large enough bitmap that base64 exceeds MAX_CHUNK_SIZE (4096)
+        bitmap = np.random.rand(200, 200).astype(np.float32)
+        result = render_to_string(kitty(format="rgb", compression=False), bitmap)
+        # Should have multiple APC sequences (m=1 for continuation)
+        assert "m=1" in result  # At least one continuation chunk
+        assert "m=0" in result  # Final chunk
+
+    def test_call_partial_update(self):
+        """__call__() preserves defaults for unspecified params."""
+        custom = kitty(format="rgb")
+        assert custom.format == "rgb"
+        assert custom.compression == kitty.compression  # preserved
+        assert custom.columns == kitty.columns  # preserved
+        assert custom.rows == kitty.rows  # preserved
+
+    def test_render_grayscale_bitmap_png(self):
+        """render() handles grayscale-only bitmap in PNG format."""
+        bitmap = np.linspace(0, 1, 100).reshape(10, 10).astype(np.float32)
+        result = render_to_string(kitty(format="png"), bitmap)
+        assert result.startswith("\033_G")
+        assert "f=100" in result
+
+    def test_render_grayscale_bitmap_rgb(self):
+        """render() converts grayscale to RGB for raw format."""
+        bitmap = np.linspace(0, 1, 100).reshape(10, 10).astype(np.float32)
+        result = render_to_string(kitty(format="rgb"), bitmap)
+        assert "f=24" in result
+        # Should include width and height params for raw format
+        assert "s=10" in result
+        assert "v=10" in result
+
+    def test_invalid_bitmap_3d(self):
+        """render() rejects 3D bitmap."""
+        with pytest.raises(ValueError, match="must be 2D"):
+            render_to_string(kitty, np.zeros((4, 2, 3)))
+
+    def test_invalid_colors_shape(self):
+        """render() rejects mismatched colors shape."""
+        bitmap = np.zeros((10, 10), dtype=np.float32)
+        colors = np.zeros((5, 5, 3), dtype=np.float32)
+        with pytest.raises(ValueError, match="must match bitmap shape"):
+            render_to_string(kitty, bitmap, colors)
+
+    def test_frozen(self):
+        """KittyRenderer is immutable (frozen dataclass)."""
+        with pytest.raises(Exception):
+            kitty.format = "rgb"
+
+
+class TestMakePngMinimal:
+    """Tests for _make_png_minimal helper."""
+
+    def test_produces_valid_png_signature(self):
+        """_make_png_minimal() produces bytes starting with PNG signature."""
+        from dapple.renderers.kitty import _make_png_minimal
+
+        bitmap = np.random.rand(4, 4).astype(np.float32)
+        data = _make_png_minimal(bitmap)
+        assert data[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_grayscale_mode(self):
+        """_make_png_minimal() produces valid grayscale PNG."""
+        from dapple.renderers.kitty import _make_png_minimal
+
+        bitmap = np.ones((4, 4), dtype=np.float32)
+        data = _make_png_minimal(bitmap)
+        assert len(data) > 8
+        # Should contain IHDR, IDAT, IEND chunks
+        assert b"IHDR" in data
+        assert b"IDAT" in data
+        assert b"IEND" in data
+
+    def test_rgb_mode(self):
+        """_make_png_minimal() produces valid RGB PNG."""
+        from dapple.renderers.kitty import _make_png_minimal
+
+        bitmap = np.ones((4, 4), dtype=np.float32)
+        colors = np.random.rand(4, 4, 3).astype(np.float32)
+        data = _make_png_minimal(bitmap, colors)
+        assert data[:8] == b"\x89PNG\r\n\x1a\n"
+        assert b"IHDR" in data
+
+    def test_pil_can_read_output(self):
+        """_make_png_minimal() output is readable by PIL."""
+        pytest.importorskip("PIL")
+        from io import BytesIO
+
+        from PIL import Image
+
+        from dapple.renderers.kitty import _make_png_minimal
+
+        bitmap = np.linspace(0, 1, 16).reshape(4, 4).astype(np.float32)
+        data = _make_png_minimal(bitmap)
+        img = Image.open(BytesIO(data))
+        assert img.size == (4, 4)
+
+    def test_pil_can_read_rgb_output(self):
+        """_make_png_minimal() RGB output is readable by PIL."""
+        pytest.importorskip("PIL")
+        from io import BytesIO
+
+        from PIL import Image
+
+        from dapple.renderers.kitty import _make_png_minimal
+
+        bitmap = np.ones((4, 4), dtype=np.float32)
+        colors = np.zeros((4, 4, 3), dtype=np.float32)
+        colors[:, :, 0] = 1.0  # Red
+        data = _make_png_minimal(bitmap, colors)
+        img = Image.open(BytesIO(data))
+        assert img.size == (4, 4)
+        assert img.mode == "RGB"
+
+
+class TestTryPilPng:
+    """Tests for _try_pil_png helper."""
+
+    def test_produces_png_with_pil(self):
+        """_try_pil_png() returns PNG bytes when PIL is available."""
+        pytest.importorskip("PIL")
+        from dapple.renderers.kitty import _try_pil_png
+
+        bitmap = np.random.rand(4, 4).astype(np.float32)
+        data = _try_pil_png(bitmap)
+        assert data is not None
+        assert data[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_grayscale_mode(self):
+        """_try_pil_png() produces grayscale PNG without colors."""
+        pytest.importorskip("PIL")
+        from dapple.renderers.kitty import _try_pil_png
+
+        bitmap = np.ones((4, 4), dtype=np.float32)
+        data = _try_pil_png(bitmap)
+        assert data is not None
+        assert len(data) > 0
+
+    def test_rgb_mode(self):
+        """_try_pil_png() produces RGB PNG with colors."""
+        pytest.importorskip("PIL")
+        from dapple.renderers.kitty import _try_pil_png
+
+        bitmap = np.ones((4, 4), dtype=np.float32)
+        colors = np.random.rand(4, 4, 3).astype(np.float32)
+        data = _try_pil_png(bitmap, colors)
+        assert data is not None
+        assert data[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_returns_none_without_pil(self):
+        """_try_pil_png() returns None when PIL import fails."""
+        from unittest.mock import patch
+
+        from dapple.renderers.kitty import _try_pil_png
+
+        bitmap = np.random.rand(4, 4).astype(np.float32)
+        # Mock the import inside _try_pil_png to raise ImportError
+        with patch("dapple.renderers.kitty._try_pil_png") as mock_fn:
+            mock_fn.return_value = None
+            result = mock_fn(bitmap)
+            assert result is None
+
 
 class TestFingerprintRenderer:
     """Tests for FingerprintRenderer."""

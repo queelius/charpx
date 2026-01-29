@@ -419,33 +419,41 @@ def skill_install(local: bool = False, global_: bool = False) -> bool:
     return True
 
 
+def _run_skill_command(argv: list[str]) -> None:
+    """Handle the 'skill' subcommand separately from the main parser."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="mdcat skill", description="Manage Claude Code skill")
+    parser.add_argument("--install", action="store_true", help="Install the skill")
+    parser.add_argument("--local", action="store_true", help="Install to current project")
+    parser.add_argument("--global", dest="global_", action="store_true", help="Install globally")
+    parser.add_argument("--show", action="store_true", help="Show skill content")
+
+    args = parser.parse_args(argv)
+
+    if args.show:
+        print(SKILL_CONTENT)
+        return
+    if args.install:
+        success = skill_install(local=args.local, global_=args.global_)
+        sys.exit(0 if success else 1)
+    parser.print_help()
+
+
 def main() -> None:
     """CLI entry point."""
     import argparse
+
+    # Handle 'skill' subcommand before argparse to avoid positional conflicts
+    if len(sys.argv) > 1 and sys.argv[1] == "skill":
+        _run_skill_command(sys.argv[2:])
+        return
 
     parser = argparse.ArgumentParser(
         prog="mdcat",
         description="Display markdown files in the terminal with inline images",
     )
 
-    subparsers = parser.add_subparsers(dest="command")
-
-    # skill subcommand
-    skill_parser = subparsers.add_parser("skill", help="Manage Claude Code skill")
-    skill_parser.add_argument(
-        "--install", action="store_true", help="Install the skill"
-    )
-    skill_parser.add_argument(
-        "--local", action="store_true", help="Install to current project"
-    )
-    skill_parser.add_argument(
-        "--global", dest="global_", action="store_true", help="Install globally"
-    )
-    skill_parser.add_argument(
-        "--show", action="store_true", help="Show skill content"
-    )
-
-    # Main arguments
     parser.add_argument("file", type=Path, nargs="?", help="Markdown file to display")
     parser.add_argument(
         "-r",
@@ -481,18 +489,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Handle skill subcommand
-    if args.command == "skill":
-        if args.show:
-            print(SKILL_CONTENT)
-            return
-        if args.install:
-            success = skill_install(local=args.local, global_=args.global_)
-            sys.exit(0 if success else 1)
-        skill_parser.print_help()
-        return
-
-    # Main command
     if not args.file:
         parser.print_help()
         sys.exit(1)
