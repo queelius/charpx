@@ -94,6 +94,25 @@ The codebase has a modular structure:
   - `matplotlib.py` - MatplotlibAdapter, from_matplotlib
   - `cairo.py` - CairoAdapter, from_cairo
 
+### Extras (`dapple/extras/`)
+
+CLI tools and utilities built on dapple, shipped as part of the same package. Install tool dependencies with `pip install dapple[imgcat]`, `pip install dapple[all-tools]`, etc.
+
+- **`dapple/extras/imgcat/`**: Terminal image viewer
+- **`dapple/extras/funcat/`**: Function plotter
+- **`dapple/extras/pdfcat/`**: Terminal PDF viewer
+- **`dapple/extras/mdcat/`**: Terminal markdown viewer with inline images
+- **`dapple/extras/vidcat/`**: Terminal video player
+- **`dapple/extras/csvcat/`**: CSV/TSV viewer with charting
+- **`dapple/extras/datacat/`**: JSON/JSONL viewer with tree/table/chart modes
+- **`dapple/extras/vizlib/`**: Chart primitives (sparkline, bar, histogram, heatmap)
+
+All extras use `dapple.extras.X` namespace for imports:
+```python
+from dapple.extras.imgcat import view, imgcat
+from dapple.extras.vizlib import sparkline, bar_chart
+```
+
 ## Renderer Protocol
 
 All renderers implement the `Renderer` protocol:
@@ -144,9 +163,10 @@ braille(threshold=0.3, color_mode="grayscale").render(...)
 ## Dependencies
 
 - **Core library**: numpy only
-- **CLI** (`[cli]`): pillow
 - **Adapters** (`[adapters]`): pillow, matplotlib
-- **Dev** (`[dev]`): pytest, pytest-cov, pillow, matplotlib
+- **Tools** (`[all-tools]`): all extras dependencies (pillow, pypdfium2, rich)
+- **Individual tools**: `[imgcat]`, `[pdfcat]`, `[mdcat]`, `[vidcat]`, `[funcat]`, `[csvcat]`, `[datacat]`, `[vizlib]`
+- **Dev** (`[dev]`): pytest, pytest-cov, all tools and adapters
 
 ## Test Structure
 
@@ -154,6 +174,14 @@ braille(threshold=0.3, color_mode="grayscale").render(...)
 tests/
   test_canvas.py     # Canvas class, composition, conversion
   test_renderers.py  # All renderers, preprocessing functions
+  test_imgcat.py     # imgcat terminal image viewer
+  test_funcat.py     # funcat function plotter
+  test_pdfcat.py     # pdfcat PDF viewer
+  test_mdcat.py      # mdcat markdown viewer
+  test_vidcat.py     # vidcat video player
+  test_csvcat.py     # csvcat CSV viewer
+  test_datacat.py    # datacat JSON viewer
+  test_vizlib.py     # vizlib chart primitives
 ```
 
 Run with: `pytest tests/ -v`

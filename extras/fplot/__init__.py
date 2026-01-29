@@ -1,1 +1,0 @@
-# fplot - Terminal function plotter

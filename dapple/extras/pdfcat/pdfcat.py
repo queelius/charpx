@@ -1,0 +1,594 @@
+"""pdfcat - Terminal PDF viewer.
+
+Core implementation for rendering PDF pages to the terminal using dapple.
+"""
+
+from __future__ import annotations
+
+import shutil
+import sys
+import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, TextIO
+
+if TYPE_CHECKING:
+    from dapple.renderers import Renderer
+
+# pypdfium2 is optional
+try:
+    import pypdfium2 as pdfium
+    HAS_PYPDFIUM2 = True
+except ImportError:
+    HAS_PYPDFIUM2 = False
+    pdfium = None
+
+
+@dataclass
+class PdfcatOptions:
+    """Options for PDF rendering.
+
+    Attributes:
+        renderer: Renderer name or instance ("auto", "braille", "quadrants", etc.)
+        width: Output width in characters (None = terminal width)
+        height: Output height in characters per page (None = auto)
+        pages: Page range string ("1-3", "5", "1,3,5", etc.)
+        dpi: DPI for PDF rendering (default: 150)
+        dither: Apply Floyd-Steinberg dithering
+        contrast: Apply auto-contrast
+        invert: Invert colors
+        grayscale: Force grayscale output
+        no_color: Disable color output entirely
+    """
+    renderer: str = "auto"
+    width: int | None = None
+    height: int | None = None
+    pages: str | None = None
+    dpi: int = 150
+    dither: bool = False
+    contrast: bool = False
+    invert: bool = False
+    grayscale: bool = False
+    no_color: bool = False
+
+
+@dataclass
+class RenderedPage:
+    """A rendered page image."""
+    number: int
+    image_path: Path
+
+
+@dataclass
+class RenderResult:
+    """Result of PDF rendering."""
+    pages: list[RenderedPage] = field(default_factory=list)
+    temp_dir: tempfile.TemporaryDirectory | None = None
+    total_pages: int = 0
+
+    def cleanup(self):
+        """Clean up temporary files."""
+        if self.temp_dir:
+            self.temp_dir.cleanup()
+            self.temp_dir = None
+
+
+def parse_page_range(page_str: str, total_pages: int) -> list[int]:
+    """Parse a page range string into a list of page numbers.
+
+    Args:
+        page_str: Page range like "1-3", "5", "1,3,5", "1-3,7,9-11"
+        total_pages: Total number of pages in document
+
+    Returns:
+        List of 1-indexed page numbers
+    """
+    pages = set()
+    for part in page_str.split(","):
+        part = part.strip()
+        if "-" in part:
+            start, end = part.split("-", 1)
+            start = int(start) if start else 1
+            end = int(end) if end else total_pages
+            pages.update(range(start, min(end, total_pages) + 1))
+        else:
+            page = int(part)
+            if 1 <= page <= total_pages:
+                pages.add(page)
+    return sorted(pages)
+
+
+def render_pdf_to_images(
+    path: Path,
+    dpi: int = 150,
+    pages: str | None = None,
+) -> RenderResult:
+    """Render PDF pages to images using pypdfium2.
+
+    Args:
+        path: Path to PDF file.
+        dpi: Resolution for rendering.
+        pages: Optional page range string.
+
+    Returns:
+        RenderResult with rendered page images.
+    """
+    if not HAS_PYPDFIUM2:
+        return RenderResult()
+
+    try:
+        pdf = pdfium.PdfDocument(path)
+    except Exception:
+        return RenderResult()
+
+    total_pages = len(pdf)
+
+    if pages:
+        page_nums = parse_page_range(pages, total_pages)
+    else:
+        page_nums = list(range(1, total_pages + 1))
+
+    temp_dir = tempfile.TemporaryDirectory(prefix="pdfcat_")
+    temp_path = Path(temp_dir.name)
+
+    rendered: list[RenderedPage] = []
+
+    for page_num in page_nums:
+        page_idx = page_num - 1
+
+        try:
+            page = pdf[page_idx]
+            scale = dpi / 72.0
+            bitmap = page.render(scale=scale)
+            pil_image = bitmap.to_pil()
+
+            img_path = temp_path / f"page_{page_num:04d}.png"
+            pil_image.save(img_path, "PNG")
+
+            rendered.append(RenderedPage(number=page_num, image_path=img_path))
+        except Exception:
+            continue
+
+    pdf.close()
+
+    return RenderResult(
+        pages=rendered,
+        temp_dir=temp_dir,
+        total_pages=total_pages,
+    )
+
+
+def get_renderer(name: str, options: PdfcatOptions) -> Renderer:
+    """Get a renderer by name with appropriate configuration."""
+    from dapple import (
+        ascii,
+        braille,
+        fingerprint,
+        kitty,
+        quadrants,
+        sextants,
+        sixel,
+    )
+    from dapple.auto import auto_renderer
+
+    if name == "auto":
+        return auto_renderer(
+            prefer_color=not options.grayscale,
+            plain=options.no_color,
+        )
+
+    renderers = {
+        "braille": braille,
+        "quadrants": quadrants,
+        "sextants": sextants,
+        "ascii": ascii,
+        "sixel": sixel,
+        "kitty": kitty,
+        "fingerprint": fingerprint,
+    }
+
+    renderer = renderers.get(name)
+    if renderer is None:
+        raise ValueError(f"Unknown renderer: {name}")
+
+    if name == "braille":
+        if options.no_color:
+            renderer = braille(color_mode="none")
+        elif options.grayscale:
+            renderer = braille(color_mode="grayscale")
+        else:
+            renderer = braille(color_mode="truecolor")
+    elif name in ("quadrants", "sextants"):
+        if options.grayscale:
+            if name == "quadrants":
+                renderer = quadrants(grayscale=True)
+            else:
+                renderer = sextants(grayscale=True)
+
+    return renderer
+
+
+def pdfcat(
+    pdf_path: str | Path,
+    *,
+    renderer: str = "auto",
+    width: int | None = None,
+    height: int | None = None,
+    pages: str | None = None,
+    dpi: int = 150,
+    dither: bool = False,
+    contrast: bool = False,
+    invert: bool = False,
+    grayscale: bool = False,
+    no_color: bool = False,
+    dest: TextIO | None = None,
+) -> bool:
+    """Render a PDF to the terminal.
+
+    Args:
+        pdf_path: Path to the PDF file.
+        renderer: Renderer name ("auto", "braille", "quadrants", etc.)
+        width: Output width in characters (None = terminal width)
+        height: Output height in characters per page (None = auto)
+        pages: Page range string ("1-3", "5", "1,3,5", etc.)
+        dpi: DPI for PDF rendering (default: 150)
+        dither: Apply Floyd-Steinberg dithering
+        contrast: Apply auto-contrast
+        invert: Invert colors
+        grayscale: Force grayscale output
+        no_color: Disable color output entirely
+        dest: Output stream (default: stdout)
+
+    Returns:
+        True if rendering succeeded, False otherwise.
+    """
+    if not HAS_PYPDFIUM2:
+        print(
+            "pdfcat requires pypdfium2. Install with: pip install dapple[pdfcat]",
+            file=sys.stderr,
+        )
+        return False
+
+    try:
+        from PIL import Image
+        from dapple.adapters.pil import from_pil, load_image
+    except ImportError:
+        print(
+            "pdfcat requires pillow. Install with: pip install dapple[pdfcat]",
+            file=sys.stderr,
+        )
+        return False
+
+    from dapple import auto_contrast as ac, floyd_steinberg, invert as inv
+    from dapple.canvas import Canvas
+
+    path = Path(pdf_path)
+    if not path.exists():
+        print(f"Error: File not found: {path}", file=sys.stderr)
+        return False
+
+    options = PdfcatOptions(
+        renderer=renderer,
+        width=width,
+        height=height,
+        pages=pages,
+        dpi=dpi,
+        dither=dither,
+        contrast=contrast,
+        invert=invert,
+        grayscale=grayscale,
+        no_color=no_color,
+    )
+
+    rend = get_renderer(renderer, options)
+    result = render_pdf_to_images(path, dpi=dpi, pages=pages)
+
+    if not result.pages:
+        print(f"Error: Failed to render PDF: {path}", file=sys.stderr)
+        return False
+
+    # Determine output width
+    if width:
+        char_width = width
+    else:
+        terminal_size = shutil.get_terminal_size(fallback=(80, 24))
+        char_width = terminal_size.columns
+
+    output = dest if dest is not None else sys.stdout
+
+    # Print header
+    output.write(f"# {path.name}: {result.total_pages} pages\n")
+
+    TERMINAL_CELL_RATIO = 0.5
+
+    # For kitty, configure renderer to use terminal columns for scaling
+    if renderer == "kitty":
+        from dapple import kitty as kitty_renderer
+        rend = kitty_renderer(columns=char_width)
+
+    try:
+        for page in result.pages:
+            if result.total_pages > 1:
+                output.write(f"\n## Page {page.number}\n")
+
+            # Load page image
+            pil_img = Image.open(page.image_path)
+
+            # For kitty, keep image at original DPI-rendered size
+            # The kitty protocol's columns parameter handles display scaling
+            if renderer == "kitty":
+                # Don't resize - kitty will scale to fit columns
+                pass
+            else:
+                # Calculate dimensions for other renderers
+                if renderer == "sixel":
+                    # Sixel: use reasonable pixel width
+                    CELL_PIXEL_WIDTH = 10
+                    pixel_width = char_width * CELL_PIXEL_WIDTH
+                else:
+                    pixel_width = char_width * rend.cell_width
+
+                # Resize to fit width while maintaining aspect ratio
+                w, h = pil_img.size
+                aspect = h / w
+                new_w = pixel_width
+                new_h = int(new_w * aspect)
+                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+                # Aspect ratio correction for character renderers
+                if renderer not in ("sixel", "kitty"):
+                    cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
+                    w, h = pil_img.size
+                    new_h = int(h * cell_aspect)
+                    if new_h > 0:
+                        pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
+
+            canvas = from_pil(pil_img)
+
+            # Apply preprocessing
+            bitmap = canvas.bitmap.copy()
+            bitmap.flags.writeable = True
+
+            if contrast:
+                bitmap = ac(bitmap)
+            if dither:
+                bitmap = floyd_steinberg(bitmap)
+            if invert:
+                bitmap = inv(bitmap)
+
+            if contrast or dither or invert:
+                canvas = Canvas(bitmap, colors=canvas.colors)
+
+            # Render
+            colors_to_use = None if no_color else canvas._colors
+            rend.render(canvas._bitmap, colors_to_use, dest=output)
+            output.write("\n")
+
+        return True
+
+    finally:
+        result.cleanup()
+
+
+def view(pdf_path: str | Path, **kwargs) -> bool:
+    """Quick view of a PDF with default settings.
+
+    Alias for pdfcat() with default options.
+    """
+    return pdfcat(pdf_path, **kwargs)
+
+
+# Claude Code skill content
+SKILL_CONTENT = '''# pdfcat - Terminal PDF Viewer
+
+pdfcat renders PDF documents as images in the terminal using dapple.
+
+## Usage
+
+```bash
+# View a PDF (auto-detects best renderer)
+pdfcat document.pdf
+
+# View specific pages
+pdfcat --pages 1-3 document.pdf
+pdfcat --pages "1,3,5" document.pdf
+
+# Use a specific renderer
+pdfcat -r braille document.pdf    # High detail, works everywhere
+pdfcat -r quadrants document.pdf  # Color blocks
+pdfcat -r sixel document.pdf      # True pixels (if supported)
+pdfcat -r kitty document.pdf      # For Kitty/Ghostty
+
+# Image processing
+pdfcat --dither document.pdf      # Dithering for better gradients
+pdfcat --contrast document.pdf    # Enhance contrast
+pdfcat --invert document.pdf      # Invert colors
+
+# Control quality
+pdfcat --dpi 300 document.pdf     # Higher resolution
+pdfcat -w 60 document.pdf         # Limit width
+```
+
+## When to Use
+
+Use pdfcat when you need to:
+- Preview PDF documents visually in the terminal
+- Show the user what a PDF looks like
+- Check PDF layouts or graphics
+- Display PDF pages to the user
+
+## Python API
+
+```python
+from dapple.extras.pdfcat import view, pdfcat
+
+# Quick view
+view("document.pdf")
+
+# With options
+pdfcat("document.pdf", pages="1-3", renderer="braille", dither=True)
+```
+
+## Renderers
+
+| Renderer | Best For |
+|----------|----------|
+| auto | Auto-detect best for terminal |
+| kitty | Kitty/Ghostty terminals |
+| sixel | mlterm, foot, wezterm |
+| quadrants | Color output, most terminals |
+| braille | Detailed monochrome |
+| ascii | Universal compatibility |
+'''
+
+
+def skill_install(local: bool = False, global_: bool = False) -> bool:
+    """Install the pdfcat skill for Claude Code.
+
+    Args:
+        local: Install to current project (.claude/skills/)
+        global_: Install globally (~/.claude/skills/)
+
+    Returns:
+        True if successful
+    """
+    if local:
+        skill_dir = Path.cwd() / ".claude" / "skills"
+    elif global_:
+        skill_dir = Path.home() / ".claude" / "skills"
+    else:
+        print("Error: Specify --local or --global", file=sys.stderr)
+        return False
+
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    skill_file = skill_dir / "pdfcat.md"
+    skill_file.write_text(SKILL_CONTENT)
+    print(f"Installed skill to: {skill_file}")
+    return True
+
+
+def main() -> None:
+    """CLI entry point."""
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="pdfcat",
+        description="Display PDF pages in the terminal using dapple",
+    )
+
+    # Main command arguments
+    parser.add_argument(
+        "pdf", type=Path, nargs="?", help="PDF file to display"
+    )
+
+    # Skill management flags
+    parser.add_argument(
+        "--skill-show", action="store_true", help="Show Claude Code skill content"
+    )
+    parser.add_argument(
+        "--skill-install", action="store_true", help="Install Claude Code skill"
+    )
+    parser.add_argument(
+        "--local", action="store_true", help="Install skill to current project"
+    )
+    parser.add_argument(
+        "--global", dest="global_", action="store_true", help="Install skill globally"
+    )
+    parser.add_argument(
+        "-r",
+        "--renderer",
+        choices=[
+            "auto",
+            "braille",
+            "quadrants",
+            "sextants",
+            "ascii",
+            "sixel",
+            "kitty",
+            "fingerprint",
+        ],
+        default="auto",
+        help="Renderer to use (default: auto)",
+    )
+    parser.add_argument(
+        "-w", "--width", type=int,
+        help="Output width in characters (default: terminal width)"
+    )
+    parser.add_argument("-H", "--height", type=int, help="Output height in characters")
+    parser.add_argument(
+        "-p", "--pages", type=str,
+        help='Page range (e.g., "1-3", "5", "1,3,5")'
+    )
+    parser.add_argument(
+        "--dpi", type=int, default=150,
+        help="DPI for PDF rendering (default: 150)"
+    )
+    parser.add_argument(
+        "--dither", action="store_true", help="Apply Floyd-Steinberg dithering"
+    )
+    parser.add_argument(
+        "--contrast", action="store_true", help="Apply auto-contrast"
+    )
+    parser.add_argument("--invert", action="store_true", help="Invert colors")
+    parser.add_argument(
+        "-o", "--output", type=Path, help="Output file (default: stdout)"
+    )
+    parser.add_argument(
+        "--grayscale", action="store_true",
+        help="Force grayscale output"
+    )
+    parser.add_argument(
+        "--no-color", action="store_true",
+        help="Disable color output"
+    )
+
+    args = parser.parse_args()
+
+    # Handle skill flags
+    if args.skill_show:
+        print(SKILL_CONTENT)
+        return
+    if args.skill_install:
+        success = skill_install(local=args.local, global_=args.global_)
+        sys.exit(0 if success else 1)
+
+    # Main command
+    if not args.pdf:
+        parser.print_help()
+        sys.exit(1)
+
+    if not args.pdf.exists():
+        print(f"Error: File not found: {args.pdf}", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine output destination
+    if args.output:
+        dest = open(args.output, "w", encoding="utf-8")
+    else:
+        dest = sys.stdout
+
+    try:
+        success = pdfcat(
+            args.pdf,
+            renderer=args.renderer,
+            width=args.width,
+            height=args.height,
+            pages=args.pages,
+            dpi=args.dpi,
+            dither=args.dither,
+            contrast=args.contrast,
+            invert=args.invert,
+            grayscale=args.grayscale,
+            no_color=args.no_color,
+            dest=dest,
+        )
+        sys.exit(0 if success else 1)
+    except KeyboardInterrupt:
+        sys.exit(130)
+    finally:
+        if args.output:
+            dest.close()
+
+
+if __name__ == "__main__":
+    main()

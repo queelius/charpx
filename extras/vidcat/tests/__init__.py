@@ -1,1 +1,0 @@
-# vidcat tests

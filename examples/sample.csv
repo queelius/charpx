@@ -1,0 +1,11 @@
+name,age,score,department,active
+Alice,30,95.2,Engineering,true
+Bob,25,87.0,Marketing,true
+Charlie,35,72.5,Engineering,false
+Diana,28,91.3,Sales,true
+Eve,42,88.7,Marketing,true
+Frank,31,65.0,Engineering,true
+Grace,27,93.1,Sales,false
+Hank,38,78.4,Marketing,true
+Ivy,29,96.0,Engineering,true
+Jack,33,84.2,Sales,true

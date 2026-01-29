@@ -30,56 +30,49 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Legacy CLI (now delegates to imgcat)
-cli = [
-    "pillow>=9.0",
-]
 # Adapters for various image sources
 adapters = [
     "pillow>=9.0",
     "matplotlib>=3.5",
 ]
-# Terminal image viewer (dependencies only - install imgcat separately)
-imgcat-deps = [
-    "pillow>=9.0",
-]
-# Terminal PDF viewer (dependencies only - install pdfcat separately)
-pdfcat-deps = [
-    "pillow>=9.0",
-    "pypdfium2>=4.0",
-]
-# Terminal markdown viewer (dependencies only - install mdcat separately)
-mdcat-deps = [
-    "pillow>=9.0",
-    "rich>=13.0",
-]
+# Tools (each group provides the dependencies needed for that extra)
+imgcat = ["pillow>=9.0"]
+funcat = []
+pdfcat = ["pillow>=9.0", "pypdfium2>=4.0"]
+mdcat = ["pillow>=9.0", "rich>=13.0"]
+vidcat = ["pillow>=9.0"]
+vizlib = []
+csvcat = []
+datacat = []
+# Bundles
+all-tools = ["dapple[imgcat,funcat,pdfcat,mdcat,vidcat,csvcat,datacat]"]
 # Development
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
-    "pillow>=9.0",
-    "matplotlib>=3.5",
-    "rich>=13.0",
-    "pypdfium2>=4.0",
+    "dapple[all-tools,adapters]",
 ]
 # Everything
 all = [
-    "dapple[cli,adapters,dev]",
+    "dapple[all-tools,adapters,dev]",
 ]
-
-[project.scripts]
-dapple = "dapple.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/spinoza/dapple"
 Repository = "https://github.com/spinoza/dapple"
 
+[project.scripts]
+imgcat = "dapple.extras.imgcat.imgcat:main"
+funcat = "dapple.extras.funcat.funcat:main"
+pdfcat = "dapple.extras.pdfcat.pdfcat:main"
+mdcat = "dapple.extras.mdcat.mdcat:main"
+vidcat = "dapple.extras.vidcat.vidcat:main"
+csvcat = "dapple.extras.csvcat.cli:main"
+datacat = "dapple.extras.datacat.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dapple*", "extras*"]
-
-# Entry points for extras (when installed via pip install dapple[imgcat], etc.)
-# Each extra also has its own standalone pyproject.toml for independent installation
+include = ["dapple*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

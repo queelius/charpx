@@ -10,14 +10,14 @@ import pytest
 # Skip all tests if rich not available
 pytest.importorskip("rich")
 pytest.importorskip("PIL")
-mdcat_mod = pytest.importorskip("mdcat")
+mdcat_mod = pytest.importorskip("dapple.extras.mdcat")
 
 
 class TestMdcatOptions:
     """Tests for MdcatOptions dataclass."""
 
     def test_default_options(self):
-        from mdcat import MdcatOptions
+        from dapple.extras.mdcat import MdcatOptions
 
         opts = MdcatOptions()
         assert opts.renderer == "auto"
@@ -33,7 +33,7 @@ class TestImageCache:
     """Tests for ImageCache class."""
 
     def test_cache_file(self):
-        from mdcat.mdcat import ImageCache
+        from dapple.extras.mdcat.mdcat import ImageCache
 
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = ImageCache(cache_dir=Path(tmpdir))
@@ -45,7 +45,7 @@ class TestImageCache:
             assert cached_path.read_bytes() == data
 
     def test_get_cached_path_exists(self):
-        from mdcat.mdcat import ImageCache
+        from dapple.extras.mdcat.mdcat import ImageCache
 
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = ImageCache(cache_dir=Path(tmpdir))
@@ -58,7 +58,7 @@ class TestImageCache:
             assert cached.exists()
 
     def test_get_cached_path_not_exists(self):
-        from mdcat.mdcat import ImageCache
+        from dapple.extras.mdcat.mdcat import ImageCache
 
         with tempfile.TemporaryDirectory() as tmpdir:
             cache = ImageCache(cache_dir=Path(tmpdir))
@@ -71,7 +71,7 @@ class TestImageResolver:
     """Tests for ImageResolver class."""
 
     def test_resolve_local_absolute(self):
-        from mdcat.mdcat import ImageResolver
+        from dapple.extras.mdcat.mdcat import ImageResolver
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a test file
@@ -83,7 +83,7 @@ class TestImageResolver:
             assert result == test_file
 
     def test_resolve_local_relative(self):
-        from mdcat.mdcat import ImageResolver
+        from dapple.extras.mdcat.mdcat import ImageResolver
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a test file
@@ -97,7 +97,7 @@ class TestImageResolver:
             assert result == img_file
 
     def test_resolve_nonexistent(self):
-        from mdcat.mdcat import ImageResolver
+        from dapple.extras.mdcat.mdcat import ImageResolver
 
         resolver = ImageResolver()
         result = resolver.resolve("/nonexistent/path/to/image.png")
@@ -108,17 +108,17 @@ class TestSkillInstall:
     """Tests for skill installation."""
 
     def test_skill_install_local(self):
-        from mdcat.mdcat import skill_install
+        from dapple.extras.mdcat.mdcat import skill_install
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("mdcat.mdcat.Path.cwd", return_value=Path(tmpdir)):
+            with patch("dapple.extras.mdcat.mdcat.Path.cwd", return_value=Path(tmpdir)):
                 result = skill_install(local=True)
                 assert result is True
                 skill_file = Path(tmpdir) / ".claude" / "skills" / "mdcat.md"
                 assert skill_file.exists()
 
     def test_skill_install_requires_flag(self, capsys):
-        from mdcat.mdcat import skill_install
+        from dapple.extras.mdcat.mdcat import skill_install
 
         result = skill_install()
         assert result is False
@@ -131,7 +131,7 @@ class TestMdcatFunction:
 
     def test_mdcat_simple_markdown(self):
         """Test mdcat with simple markdown content."""
-        from mdcat import mdcat
+        from dapple.extras.mdcat import mdcat
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a simple markdown file
@@ -147,7 +147,7 @@ class TestMdcatFunction:
 
     def test_mdcat_with_code_block(self):
         """Test mdcat with code block."""
-        from mdcat import mdcat
+        from dapple.extras.mdcat import mdcat
 
         with tempfile.TemporaryDirectory() as tmpdir:
             md_path = Path(tmpdir) / "test.md"
@@ -164,14 +164,14 @@ class TestGetRenderer:
     """Tests for get_renderer function."""
 
     def test_auto_renderer(self):
-        from mdcat.mdcat import get_renderer, MdcatOptions
+        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
 
         opts = MdcatOptions()
         renderer = get_renderer("auto", opts)
         assert hasattr(renderer, "render")
 
     def test_braille_renderer(self):
-        from mdcat.mdcat import get_renderer, MdcatOptions
+        from dapple.extras.mdcat.mdcat import get_renderer, MdcatOptions
 
         opts = MdcatOptions()
         renderer = get_renderer("braille", opts)

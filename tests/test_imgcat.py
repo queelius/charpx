@@ -9,14 +9,14 @@ import pytest
 
 # Skip all tests if extras not importable
 pytest.importorskip("PIL")
-imgcat_mod = pytest.importorskip("imgcat")
+imgcat_mod = pytest.importorskip("dapple.extras.imgcat")
 
 
 class TestImgcatOptions:
     """Tests for ImgcatOptions dataclass."""
 
     def test_default_options(self):
-        from imgcat import ImgcatOptions
+        from dapple.extras.imgcat import ImgcatOptions
 
         opts = ImgcatOptions()
         assert opts.renderer == "auto"
@@ -33,14 +33,14 @@ class TestGetRenderer:
     """Tests for get_renderer function."""
 
     def test_auto_renderer(self):
-        from imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
 
         opts = ImgcatOptions()
         renderer = get_renderer("auto", opts)
         assert hasattr(renderer, "render")
 
     def test_braille_renderer(self):
-        from imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
 
         opts = ImgcatOptions()
         renderer = get_renderer("braille", opts)
@@ -49,7 +49,7 @@ class TestGetRenderer:
         assert renderer.cell_height == 4
 
     def test_quadrants_renderer(self):
-        from imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
 
         opts = ImgcatOptions()
         renderer = get_renderer("quadrants", opts)
@@ -58,7 +58,7 @@ class TestGetRenderer:
         assert renderer.cell_height == 2
 
     def test_unknown_renderer_raises(self):
-        from imgcat.imgcat import get_renderer, ImgcatOptions
+        from dapple.extras.imgcat.imgcat import get_renderer, ImgcatOptions
 
         opts = ImgcatOptions()
         with pytest.raises(ValueError, match="Unknown renderer"):
@@ -69,17 +69,17 @@ class TestSkillInstall:
     """Tests for skill installation."""
 
     def test_skill_install_local(self):
-        from imgcat.imgcat import skill_install
+        from dapple.extras.imgcat.imgcat import skill_install
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch("imgcat.imgcat.Path.cwd", return_value=Path(tmpdir)):
+            with patch("dapple.extras.imgcat.imgcat.Path.cwd", return_value=Path(tmpdir)):
                 result = skill_install(local=True)
                 assert result is True
                 skill_file = Path(tmpdir) / ".claude" / "skills" / "imgcat.md"
                 assert skill_file.exists()
 
     def test_skill_install_requires_flag(self, capsys):
-        from imgcat.imgcat import skill_install
+        from dapple.extras.imgcat.imgcat import skill_install
 
         result = skill_install()
         assert result is False
@@ -92,7 +92,7 @@ class TestImgcatFunction:
 
     def test_imgcat_with_test_image(self):
         """Test imgcat with a simple generated image."""
-        from imgcat import imgcat
+        from dapple.extras.imgcat import imgcat
         from PIL import Image
 
         with tempfile.TemporaryDirectory() as tmpdir:

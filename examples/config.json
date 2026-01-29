@@ -1,0 +1,19 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "myapp",
+    "credentials": {
+      "user": "admin",
+      "ssl": true
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "backend": "redis"
+  },
+  "features": ["auth", "logging", "metrics"],
+  "debug": false,
+  "version": null
+}
