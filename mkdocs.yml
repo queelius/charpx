@@ -1,0 +1,80 @@
+site_name: dapple
+site_description: Unified terminal graphics — one Canvas API, seven renderers
+site_url: https://queelius.github.io/dapple/
+repo_url: https://github.com/queelius/dapple
+repo_name: queelius/dapple
+edit_uri: edit/master/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+    - search.suggest
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Concepts:
+    - Philosophy: concepts/philosophy.md
+    - Design Patterns: concepts/design-patterns.md
+  - Guide:
+    - Canvas: guide/canvas.md
+    - Renderers: guide/renderers.md
+    - Character Encodings: guide/encodings.md
+    - Preprocessing: guide/preprocessing.md
+    - Adapters: guide/adapters.md
+    - Auto-Detection: guide/auto-detection.md
+  - CLI Tools:
+    - Overview: tools/index.md
+    - imgcat: tools/imgcat.md
+    - vidcat: tools/vidcat.md
+    - pdfcat: tools/pdfcat.md
+    - mdcat: tools/mdcat.md
+    - funcat: tools/funcat.md
+    - csvcat: tools/csvcat.md
+    - datacat: tools/datacat.md
+    - vizlib: tools/vizlib.md
+  - Reference: reference/index.md
+  - Blog:
+    - blog/index.md
+    - Terminal Graphics in the AI Age: blog/terminal-graphics-ai-age.md
+    - One Canvas, Seven Renderers: blog/one-canvas-seven-renderers.md
+    - Viewers and Creators: blog/viewers-and-creators.md
+    - Encodings and Preprocessing: blog/encodings-and-preprocessing.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - toc:
+      permalink: true
+
+plugins:
+  - search

@@ -96,11 +96,9 @@ class PILAdapter:
         elif img.mode in ("RGB", "RGBA"):
             rgb = img.convert("RGB")
             colors = np.array(rgb, dtype=np.float32) / 255.0
-            bitmap = (
-                0.299 * colors[:, :, 0]
-                + 0.587 * colors[:, :, 1]
-                + 0.114 * colors[:, :, 2]
-            )
+            from dapple.color import luminance
+
+            bitmap = luminance(colors)
             return Canvas(bitmap, colors=colors, renderer=self._renderer)
         else:
             # Convert unknown modes to grayscale

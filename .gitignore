@@ -19,6 +19,9 @@ htmlcov/
 .vscode/
 *.swp
 
+# Documentation build
+site/
+
 # OS
 .DS_Store
 dev/

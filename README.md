@@ -141,6 +141,9 @@ from dapple import (
     sharpen,         # Edge enhancement
     threshold,       # Binary threshold
     resize,          # Resize with bilinear interpolation
+    crop,            # Extract rectangular region
+    flip,            # Mirror horizontally or vertically
+    rotate,          # Rotate by degrees
 )
 
 # Chain preprocessing
@@ -188,7 +191,8 @@ from dapple import from_pil
 from PIL import Image
 
 img = Image.open("photo.jpg")
-canvas = from_pil(img)
+canvas = from_pil(img)                   # original size
+canvas = from_pil(img, width=160)        # resize on load
 canvas.out(quadrants)
 
 # Matplotlib

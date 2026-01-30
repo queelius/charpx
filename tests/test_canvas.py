@@ -378,6 +378,61 @@ class TestFromArray:
         assert canvas.colors.shape == (10, 20, 3)
 
 
+class TestFromPilUnified:
+    """Tests for unified from_pil (from adapters.pil via __init__)."""
+
+    def test_from_pil_supports_width(self):
+        """from dapple import from_pil now supports width parameter."""
+        from PIL import Image
+
+        from dapple import from_pil
+
+        img = Image.new("RGB", (100, 50), color=(255, 0, 0))
+        canvas = from_pil(img, width=50)
+        assert canvas.pixel_width == 50
+        assert canvas.pixel_height == 25  # proportional
+
+    def test_from_pil_supports_height(self):
+        """from dapple import from_pil now supports height parameter."""
+        from PIL import Image
+
+        from dapple import from_pil
+
+        img = Image.new("RGB", (100, 50), color=(0, 255, 0))
+        canvas = from_pil(img, height=25)
+        assert canvas.pixel_height == 25
+        assert canvas.pixel_width == 50  # proportional
+
+
+class TestPreprocessExports:
+    """Tests for preprocessing function exports from dapple package."""
+
+    def test_crop_export(self):
+        """crop is importable from dapple."""
+        from dapple import crop
+
+        bitmap = np.ones((10, 20), dtype=np.float32)
+        result = crop(bitmap, 2, 2, 5, 5)
+        assert result.shape == (5, 5)
+
+    def test_flip_export(self):
+        """flip is importable from dapple."""
+        from dapple import flip
+
+        bitmap = np.array([[1, 0], [0, 0]], dtype=np.float32)
+        result = flip(bitmap, "h")
+        assert result[0, 0] == 0.0
+        assert result[0, 1] == 1.0
+
+    def test_rotate_export(self):
+        """rotate is importable from dapple."""
+        from dapple import rotate
+
+        bitmap = np.array([[1, 0], [0, 0]], dtype=np.float32)
+        result = rotate(bitmap, 90)
+        assert result.shape == (2, 2)
+
+
 class TestCanvasColorComposition:
     """Tests for Canvas composition with colors."""
 

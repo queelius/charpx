@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import shutil
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, TextIO
 
@@ -40,63 +40,10 @@ class ImgcatOptions:
 
 
 def get_renderer(name: str, options: ImgcatOptions) -> Renderer:
-    """Get a renderer by name with appropriate configuration.
+    """Get a renderer by name with appropriate configuration."""
+    from dapple.extras.common import get_renderer as _get_renderer
 
-    Args:
-        name: Renderer name ("auto", "braille", "quadrants", etc.)
-        options: ImgcatOptions for configuration
-
-    Returns:
-        Configured Renderer instance
-    """
-    from dapple import (
-        ascii,
-        braille,
-        fingerprint,
-        kitty,
-        quadrants,
-        sextants,
-        sixel,
-    )
-    from dapple.auto import auto_renderer
-
-    if name == "auto":
-        return auto_renderer(
-            prefer_color=not options.grayscale,
-            plain=options.no_color,
-        )
-
-    # Base renderers
-    renderers = {
-        "braille": braille,
-        "quadrants": quadrants,
-        "sextants": sextants,
-        "ascii": ascii,
-        "sixel": sixel,
-        "kitty": kitty,
-        "fingerprint": fingerprint,
-    }
-
-    renderer = renderers.get(name)
-    if renderer is None:
-        raise ValueError(f"Unknown renderer: {name}")
-
-    # Configure renderer based on options
-    if name == "braille":
-        if options.no_color:
-            renderer = braille(color_mode="none")
-        elif options.grayscale:
-            renderer = braille(color_mode="grayscale")
-        else:
-            renderer = braille(color_mode="truecolor")
-    elif name in ("quadrants", "sextants"):
-        if options.grayscale:
-            if name == "quadrants":
-                renderer = quadrants(grayscale=True)
-            else:
-                renderer = sextants(grayscale=True)
-
-    return renderer
+    return _get_renderer(name, grayscale=options.grayscale, no_color=options.no_color)
 
 
 def imgcat(
@@ -138,8 +85,8 @@ def imgcat(
             "PIL is required for imgcat. Install with: pip install dapple[imgcat]"
         )
 
-    from dapple import auto_contrast as ac, floyd_steinberg, invert as inv
     from dapple.canvas import Canvas
+    from dapple.extras.common import apply_preprocessing
 
     options = ImgcatOptions(
         renderer=renderer,
@@ -198,18 +145,10 @@ def imgcat(
                 canvas = from_pil(pil_img)
 
     # Apply preprocessing
-    bitmap = canvas.bitmap.copy()
-    bitmap.flags.writeable = True
-
-    if contrast:
-        bitmap = ac(bitmap)
-    if dither:
-        bitmap = floyd_steinberg(bitmap)
-    if invert:
-        bitmap = inv(bitmap)
-
-    # Recreate canvas if preprocessing was applied
     if contrast or dither or invert:
+        bitmap = apply_preprocessing(
+            canvas.bitmap.copy(), contrast=contrast, dither=dither, invert=invert
+        )
         canvas = Canvas(bitmap, colors=canvas.colors)
 
     # Output

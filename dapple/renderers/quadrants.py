@@ -26,7 +26,7 @@ _RGB_BASE = 16  # ANSI code for start of 6x6x6 color cube
 _UNIFORM_THRESHOLD = 0.001  # Threshold for treating a block as uniform color
 
 # ITU-R BT.601 luminance coefficients
-_LUM_R, _LUM_G, _LUM_B = 0.299, 0.587, 0.114
+from dapple.color import LUM_R as _LUM_R, LUM_G as _LUM_G, LUM_B as _LUM_B
 
 # Quadrant block characters indexed by 4-bit pattern.
 # Bit positions: TL=8, TR=4, BL=2, BR=1

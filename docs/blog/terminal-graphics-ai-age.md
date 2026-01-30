@@ -1,10 +1,10 @@
-# Terminal Graphics in the Age of AI Assistants
+# Terminal Graphics in the AI Age
 
 The terminal is having a renaissance.
 
 Not because we're nostalgic for green phosphor screens, but because the most powerful development tools of 2025 are text-native. Claude Code runs in your terminal. Copilot CLI streams its work as prose. Developers SSH into remote machines, pair through tmux, and live in the command line more than ever before.
 
-In this world, there's a curious gap: we want to *see* things—charts, images, diagrams—without leaving the terminal.
+In this world, there's a curious gap: we want to *see* things -- charts, images, diagrams -- without leaving the terminal.
 
 ## The Problem
 
@@ -16,7 +16,7 @@ We need graphics that are *text*.
 
 ## Unicode to the Rescue
 
-Unicode braille characters (U+2800–U+28FF) encode 2×4 dot patterns:
+Unicode braille characters (U+2800-U+28FF) encode 2x4 dot patterns:
 
 ```
 +---+---+
@@ -30,9 +30,9 @@ Unicode braille characters (U+2800–U+28FF) encode 2×4 dot patterns:
 +---+---+
 ```
 
-Each character represents 8 binary pixels. A 160×80 pixel image becomes just 80×20 characters—compact enough for a terminal, detailed enough to recognize faces, read charts, debug visualizations.
+Each character represents 8 binary pixels. A 160x80 pixel image becomes just 80x20 characters -- compact enough for a terminal, detailed enough to recognize faces, read charts, debug visualizations.
 
-The encoding is elegant: each dot corresponds to a bit in the codepoint offset (0–255). Dot 1 is bit 0, dot 2 is bit 1, and so on. To render a 2×4 region, threshold each pixel, set the corresponding bits, add to U+2800. That's it.
+The encoding is elegant: each dot corresponds to a bit in the codepoint offset (0-255). Dot 1 is bit 0, dot 2 is bit 1, and so on. To render a 2x4 region, threshold each pixel, set the corresponding bits, add to U+2800. That's it.
 
 ```python
 # The entire core algorithm
@@ -44,7 +44,7 @@ def region_to_braille(pixels):
     return chr(0x2800 + code)
 ```
 
-Fifty lines of code. No dependencies beyond numpy. A pure function: `bitmap → braille string`.
+Fifty lines of code. No dependencies beyond numpy. A pure function: `bitmap -> braille string`.
 
 ## Why Now?
 
@@ -63,12 +63,12 @@ Braille characters satisfy all three. They're just text.
 
 The real power isn't in rendering images (though that's useful). It's in treating the terminal as a *framebuffer target*.
 
-Higher-level libraries—plotting, drawing, game graphics—can render to a bitmap and hand it off for display:
+Higher-level libraries -- plotting, drawing, game graphics -- can render to a bitmap and hand it off for display:
 
 ```python
 import matplotlib.pyplot as plt
 import numpy as np
-from pixdot.adapters import figure_to_braille
+from dapple.adapters.matplotlib import MatplotlibAdapter
 
 # Your normal matplotlib code
 fig, ax = plt.subplots()
@@ -77,21 +77,23 @@ ax.plot(x, np.sin(x), linewidth=3)
 ax.set_title("sin(x)")
 
 # Render to terminal instead of window
-print(figure_to_braille(fig, "dark_terminal"))
+adapter = MatplotlibAdapter()
+canvas = adapter.to_canvas(fig)
+canvas.out(braille)
 plt.close()
 ```
 
-The plotting code doesn't know or care that its output becomes braille. The abstraction boundary is clean: matplotlib produces pixels, pixdot produces text.
+The plotting code doesn't know or care that its output becomes braille. The abstraction boundary is clean: matplotlib produces pixels, dapple produces text.
 
 This pattern enables AI assistants to *show their work*:
 
 ```
 Claude: Here's the distribution of response times:
 
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣴⣾⣿⣿⣿⣷⣦⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣀⣀⣀⣀⣀⣀⣀⣀
+
+
+
+
 
 The p99 latency is 245ms, which suggests...
 ```
@@ -100,39 +102,33 @@ The assistant doesn't spawn a window. It doesn't save a file. It *says* the pict
 
 ## Design Philosophy
 
-Good tools are composable. pixdot follows Unix philosophy: do one thing well, play nicely with others.
+Good tools are composable. dapple follows Unix philosophy: do one thing well, play nicely with others.
 
 The library has clear layers:
 
 ```
 Layer 0: Pixels      bitmap array            Pure data
 Layer 1: Preprocess  contrast, dithering     Transformations
-Layer 2: Render      bitmap → string         Output
+Layer 2: Render      bitmap -> string        Output
 ```
 
 Each layer is independent. You can:
 - Use your own preprocessing and just call render
-- Swap renderers (braille, block characters, color modes)
+- Swap [renderers](../guide/renderers.md) (braille, block characters, color modes)
 - Build higher-level abstractions on top
 
 The SICP influence is deliberate. Primitive expressions (pixels, thresholds), means of combination (preprocessing pipelines), means of abstraction (the adapter pattern). Simple parts that compose into complex wholes.
 
 ## What About Color?
 
-Braille is binary—dots are either on or off. This captures structure beautifully: edges, outlines, the skeleton of an image. But it loses tone and texture.
+Braille is binary -- dots are either on or off. This captures structure beautifully: edges, outlines, the skeleton of an image. But it loses tone and texture.
 
-For photographs and gradients, ANSI color codes paired with block characters (▀ ▄ █) work better. That's a different tool for a different job.
-
-The principle holds: match the representation to the content. Braille for structure, blocks for tone. Sometimes you want both—render the same data two ways and compare.
+For photographs and gradients, ANSI color codes paired with block characters work better. dapple provides both: braille for structure, quadrants for tone, and five more renderers spanning the spectrum. Match the representation to the content. Braille for structure, blocks for tone. Sometimes you want both -- render the same data two ways and compare.
 
 ## Looking Forward
 
 Terminal-native graphics won't replace GUIs. But they fill a gap that's grown wider as development becomes more text-centric.
 
-When your AI pair programmer lives in the terminal, when your dev environment is a remote container, when your workflow is SSH and tmux and pipes—you need graphics that are text.
+When your AI pair programmer lives in the terminal, when your dev environment is a remote container, when your workflow is SSH and tmux and pipes -- you need graphics that are text.
 
 Unicode gave us the alphabet. Now we're learning to draw with it.
-
----
-
-*pixdot is open source: [github.com/anthropics/pixdot](https://github.com/anthropics/pixdot)*

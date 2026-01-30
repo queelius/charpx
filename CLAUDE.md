@@ -42,9 +42,12 @@ The codebase has a modular structure:
 - **`dapple/canvas.py`**: Core Canvas class
   - `Canvas(bitmap, colors, renderer)` - Main container for bitmap data
   - `out(renderer, dest)` - Stream-based output to stdout, files, or TextIO
-  - `from_array(array)` - Factory from numpy arrays (2D grayscale or 3D RGB)
-  - `from_pil(image)` - Factory from PIL Images
   - Composition methods: `hstack`, `vstack`, `overlay`, `crop`
+  - Factory functions `from_array` and `from_pil` live in adapters, re-exported via `__init__.py`
+
+- **`dapple/color.py`**: Shared color utilities
+  - `LUM_R, LUM_G, LUM_B` - ITU-R BT.601 luminance coefficients (0.299, 0.587, 0.114)
+  - `luminance(rgb)` - Compute perceptual luminance from RGB arrays (any shape with last dim 3)
 
 - **`dapple/renderers/__init__.py`**: Renderer protocol and exports
   - `Renderer` - Protocol defining `render(bitmap, colors, dest)` and cell dimensions
@@ -86,6 +89,9 @@ The codebase has a modular structure:
   - `sharpen(bitmap, strength)` - Edge enhancement
   - `threshold(bitmap, level)` - Binary threshold
   - `resize(bitmap, height, width)` - Bilinear interpolation
+  - `crop(bitmap, x, y, width, height)` - Extract rectangular region
+  - `flip(bitmap, direction)` - Mirror horizontally ("h") or vertically ("v")
+  - `rotate(bitmap, degrees)` - Rotate counter-clockwise
 
 - **`dapple/auto.py`**: Terminal capability detection and renderer auto-selection
   - `detect_terminal()` - Returns `TerminalInfo` with detected protocol and capabilities
@@ -106,6 +112,7 @@ The codebase has a modular structure:
 
 CLI tools and utilities built on dapple, shipped as part of the same package. Install tool dependencies with `pip install dapple[imgcat]`, `pip install dapple[all-tools]`, etc.
 
+- **`dapple/extras/common.py`**: Shared utilities (renderer selection, `apply_preprocessing()`)
 - **`dapple/extras/imgcat/`**: Terminal image viewer
 - **`dapple/extras/funcat/`**: Function plotter
 - **`dapple/extras/pdfcat/`**: Terminal PDF viewer
@@ -180,10 +187,13 @@ braille(threshold=0.3, color_mode="grayscale").render(...)
 
 ```
 tests/
-  test_canvas.py         # Canvas class, composition, conversion
+  test_canvas.py         # Canvas class, composition, conversion, factory functions
+  test_color.py          # Luminance utility and BT.601 coefficients
   test_renderers.py      # All renderers, preprocessing functions
+  test_adapters.py       # Numpy, PIL, Matplotlib, Cairo adapters
   test_auto.py           # Terminal detection and auto_renderer
   test_ansi_adapter.py   # ANSI escape sequence parsing
+  test_extras_common.py  # Shared renderer selection and apply_preprocessing
   test_imgcat.py         # imgcat terminal image viewer
   test_funcat.py         # funcat function plotter
   test_pdfcat.py         # pdfcat PDF viewer

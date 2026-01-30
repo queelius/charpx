@@ -94,7 +94,9 @@ class CairoAdapter:
             r = arr[:, :, 2].astype(np.float32) / 255.0
 
             colors = np.stack([r, g, b], axis=2)
-            bitmap = 0.299 * r + 0.587 * g + 0.114 * b
+            from dapple.color import luminance
+
+            bitmap = luminance(colors)
 
             return Canvas(bitmap, colors=colors, renderer=self._renderer)
 
@@ -111,7 +113,7 @@ class CairoAdapter:
             r = arr[:, :, 2].astype(np.float32) / 255.0
 
             colors = np.stack([r, g, b], axis=2)
-            bitmap = 0.299 * r + 0.587 * g + 0.114 * b
+            bitmap = luminance(colors)
 
             return Canvas(bitmap, colors=colors, renderer=self._renderer)
 

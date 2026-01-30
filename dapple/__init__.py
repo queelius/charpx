@@ -24,10 +24,12 @@ Example:
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.5.1"
 
 # Core class
-from dapple.canvas import Canvas, from_array, from_pil
+from dapple.canvas import Canvas
+from dapple.adapters.numpy import from_array
+from dapple.adapters.pil import from_pil
 
 # Renderers (instances for direct use)
 from dapple.renderers import (
@@ -57,6 +59,9 @@ from dapple.preprocess import (
     sharpen,
     threshold,
     resize,
+    crop,
+    flip,
+    rotate,
 )
 
 # Auto-detection
@@ -101,6 +106,9 @@ __all__ = [
     "sharpen",
     "threshold",
     "resize",
+    "crop",
+    "flip",
+    "rotate",
     # Auto-detection
     "Protocol",
     "TerminalInfo",

@@ -64,11 +64,9 @@ class NumpyAdapter:
         if self._array.ndim == 3:
             # RGB array - compute luminance for bitmap
             colors = self._array.astype(np.float32)
-            bitmap = (
-                0.299 * colors[:, :, 0]
-                + 0.587 * colors[:, :, 1]
-                + 0.114 * colors[:, :, 2]
-            )
+            from dapple.color import luminance
+
+            bitmap = luminance(colors)
             return Canvas(bitmap, colors=colors, renderer=self._renderer)
         else:
             bitmap = self._array.astype(np.float32)

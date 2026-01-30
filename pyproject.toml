@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dapple"
-version = "0.5.0"
+version = "0.5.1"
 description = "Unified terminal graphics library - render bitmaps to braille, blocks, ASCII, sixel, and kitty"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "spinoza"}
 ]
@@ -15,7 +15,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -52,14 +51,17 @@ dev = [
     "pytest-cov>=4.0",
     "dapple[all-tools,adapters]",
 ]
+# Documentation
+docs = ["mkdocs-material>=9.0"]
 # Everything
 all = [
     "dapple[all-tools,adapters,dev]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/spinoza/dapple"
-Repository = "https://github.com/spinoza/dapple"
+Homepage = "https://github.com/queelius/dapple"
+Repository = "https://github.com/queelius/dapple"
+Documentation = "https://queelius.github.io/dapple/"
 
 [project.scripts]
 imgcat = "dapple.extras.imgcat.imgcat:main"

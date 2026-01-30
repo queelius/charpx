@@ -112,11 +112,9 @@ class MatplotlibAdapter:
             w, h = fig.canvas.get_width_height()
             colors = data.reshape((h, w, 3)).astype(np.float32) / 255.0
 
-        bitmap = (
-            0.299 * colors[:, :, 0]
-            + 0.587 * colors[:, :, 1]
-            + 0.114 * colors[:, :, 2]
-        )
+        from dapple.color import luminance
+
+        bitmap = luminance(colors)
 
         return Canvas(bitmap, colors=colors, renderer=self._renderer)
 

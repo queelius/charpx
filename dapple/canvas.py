@@ -381,10 +381,10 @@ class Canvas:
 
         if self._colors is not None:
             rgb = (self._colors * 255).astype(np.uint8)
-            return Image.fromarray(rgb, mode="RGB")
+            return Image.fromarray(rgb)
         else:
             gray = (self._bitmap * 255).astype(np.uint8)
-            return Image.fromarray(gray, mode="L")
+            return Image.fromarray(gray)
 
     def save(self, path: str) -> None:
         """Save the canvas as an image file.
@@ -398,70 +398,3 @@ class Canvas:
         img = self.to_pil()
         img.save(path)
 
-
-
-# Factory functions for convenience
-def from_array(
-    array: NDArray[np.floating],
-    *,
-    renderer: Renderer | None = None,
-) -> Canvas:
-    """Create a Canvas from a numpy array.
-
-    Args:
-        array: 2D grayscale or 3D RGB array.
-        renderer: Default renderer.
-
-    Returns:
-        New Canvas.
-    """
-    if array.ndim == 3 and array.shape[2] == 3:
-        # RGB array - compute luminance for bitmap
-        bitmap = (
-            0.299 * array[:, :, 0] + 0.587 * array[:, :, 1] + 0.114 * array[:, :, 2]
-        )
-        return Canvas(bitmap, colors=array, renderer=renderer)
-    elif array.ndim == 2:
-        return Canvas(array, renderer=renderer)
-    else:
-        raise ValueError(f"Array must be 2D or 3D with shape (H, W, 3), got {array.shape}")
-
-
-def from_pil(
-    image: Any,
-    *,
-    renderer: Renderer | None = None,
-) -> Canvas:
-    """Create a Canvas from a PIL Image.
-
-    Args:
-        image: PIL Image object.
-        renderer: Default renderer.
-
-    Returns:
-        New Canvas.
-
-    Raises:
-        ImportError: If PIL is not installed.
-    """
-    try:
-        from PIL import Image
-    except ImportError:
-        raise ImportError("PIL is required for from_pil(). Install with: pip install pillow")
-
-    if not isinstance(image, Image.Image):
-        raise TypeError(f"Expected PIL Image, got {type(image)}")
-
-    if image.mode == "L":
-        bitmap = np.array(image, dtype=np.float32) / 255.0
-        return Canvas(bitmap, renderer=renderer)
-    elif image.mode in ("RGB", "RGBA"):
-        rgb = image.convert("RGB")
-        colors = np.array(rgb, dtype=np.float32) / 255.0
-        bitmap = 0.299 * colors[:, :, 0] + 0.587 * colors[:, :, 1] + 0.114 * colors[:, :, 2]
-        return Canvas(bitmap, colors=colors, renderer=renderer)
-    else:
-        # Convert to grayscale for other modes
-        gray = image.convert("L")
-        bitmap = np.array(gray, dtype=np.float32) / 255.0
-        return Canvas(bitmap, renderer=renderer)

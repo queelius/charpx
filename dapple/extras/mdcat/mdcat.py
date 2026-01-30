@@ -122,27 +122,9 @@ class ImageResolver:
 
 def get_renderer(name: str, options: MdcatOptions) -> Renderer:
     """Get a renderer by name."""
-    from dapple import braille, quadrants, sextants, ascii, sixel, kitty, fingerprint
-    from dapple.auto import auto_renderer
+    from dapple.extras.common import get_renderer as _get_renderer
 
-    if name == "auto":
-        return auto_renderer()
-
-    renderers = {
-        "braille": braille,
-        "quadrants": quadrants,
-        "sextants": sextants,
-        "ascii": ascii,
-        "sixel": sixel,
-        "kitty": kitty,
-        "fingerprint": fingerprint,
-    }
-
-    renderer = renderers.get(name)
-    if renderer is None:
-        raise ValueError(f"Unknown renderer: {name}")
-
-    return renderer
+    return _get_renderer(name)
 
 
 class DappleImageItem(ImageItem):
