@@ -765,8 +765,8 @@ class TestPreprocess:
 
         bitmap = np.array([[0.3, 0.5], [0.4, 0.6]], dtype=np.float32)
         result = auto_contrast(bitmap)
-        assert result.min() == pytest.approx(0.0)
-        assert result.max() == pytest.approx(1.0)
+        assert np.amin(result) == pytest.approx(0.0)
+        assert np.amax(result) == pytest.approx(1.0)
 
     def test_auto_contrast_constant(self):
         """auto_contrast handles constant image."""

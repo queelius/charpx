@@ -154,9 +154,9 @@ class Canvas:
         """
         renderer = self._renderer
         if renderer is None:
-            from dapple.renderers import braille
+            from dapple.renderers import sextants
 
-            renderer = braille
+            renderer = sextants
         buf = StringIO()
         renderer.render(self._bitmap, self._colors, dest=buf)
         return buf.getvalue()

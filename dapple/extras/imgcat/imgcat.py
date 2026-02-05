@@ -174,65 +174,78 @@ def view(image_path: str | Path, **kwargs) -> None:
 
 
 # Claude Code skill content
-SKILL_CONTENT = '''# imgcat - Terminal Image Viewer
+SKILL_CONTENT = '''\
+---
+name: imgcat
+description: >-
+  Use when the user asks to show an image, display a picture, view a photo,
+  preview an image file, render an image in the terminal, or see what an
+  image looks like. Also use when you need to visually inspect image output
+  from a pipeline or verify generated images.
+---
 
-imgcat displays images in the terminal using dapple renderers.
+Display images in the terminal using `imgcat` from the dapple library.
 
-## Usage
+## When to use
+
+Invoke this skill when the user asks you to show, display, preview, or view an
+image file (PNG, JPEG, GIF, BMP, TIFF, WebP, etc.) in the terminal.
+
+## How to invoke
+
+Run `imgcat` via the Bash tool:
 
 ```bash
-# View an image (auto-detects best renderer)
-imgcat photo.jpg
-
-# View multiple images
-imgcat *.png
-
-# Use a specific renderer
-imgcat -r braille photo.jpg    # High detail, works everywhere
-imgcat -r quadrants photo.jpg  # Color blocks
-imgcat -r sixel photo.jpg      # True pixels (if supported)
-imgcat -r kitty photo.jpg      # For Kitty/Ghostty
-
-# Image processing
-imgcat --dither photo.jpg      # Dithering for better gradients
-imgcat --contrast photo.jpg    # Enhance contrast
-imgcat --invert photo.jpg      # Invert colors
-
-# Size control
-imgcat -w 60 photo.jpg         # Limit width to 60 chars
-imgcat -H 30 photo.jpg         # Limit height
+imgcat <path> -r braille -w 80
 ```
 
-## When to Use
+Always pass `-w 80` (or similar) to keep output readable. Without it, imgcat
+uses the full terminal width, which may be too wide for comfortable viewing.
 
-Use imgcat when you need to:
-- Show images to the user in the terminal
-- Preview image files visually
-- Display generated plots or diagrams
-- Verify image content
+## Key flags
 
-## Python API
+| Flag | Purpose |
+|------|---------|
+| `-r <name>` | Renderer: `auto`, `braille`, `quadrants`, `sextants`, `ascii`, `sixel`, `kitty` |
+| `-w <cols>` | Output width in characters (recommended: 60-100) |
+| `-H <rows>` | Output height in characters |
+| `--dither` | Floyd-Steinberg dithering for smoother gradients |
+| `--contrast` | Auto-contrast enhancement |
+| `--invert` | Invert light/dark |
+| `--grayscale` | Force grayscale output |
+| `--no-color` | Disable ANSI color codes entirely |
 
-```python
-from dapple.extras.imgcat import view, imgcat
+## Renderer guidance
 
-# Quick view
-view("photo.jpg")
+- **`braille`** (recommended default) — high-detail Unicode dots, works in every
+  terminal, produces text that always displays correctly even when piped or
+  captured. Best choice for Claude Code sessions.
+- **`quadrants`** — color block characters, good balance of color and detail.
+- **`auto`** — auto-detects the best renderer for the current terminal (may
+  choose sixel/kitty which won't render in all contexts).
+- **`sixel`** / **`kitty`** — true-pixel protocols, only work in supported
+  terminals (not in Claude Code TUI).
 
-# With options
-imgcat("photo.jpg", renderer="braille", dither=True, width=80)
+## Examples
+
+```bash
+# Show an image at a comfortable width
+imgcat photo.jpg -r braille -w 80
+
+# Color preview with quadrants
+imgcat chart.png -r quadrants -w 100
+
+# Enhanced contrast for dark images
+imgcat scan.png -r braille -w 80 --contrast
+
+# Multiple images
+imgcat *.png -r braille -w 60
 ```
 
-## Renderers
+## Experimental note
 
-| Renderer | Best For |
-|----------|----------|
-| auto | Auto-detect best for terminal |
-| kitty | Kitty/Ghostty terminals |
-| sixel | mlterm, foot, wezterm |
-| quadrants | Color output, most terminals |
-| braille | Detailed monochrome |
-| ascii | Universal compatibility |
+Output goes to stdout. If images don't render visually in the Claude Code TUI,
+fall back to `-r braille` which produces Unicode text that always displays.
 '''
 
 
@@ -247,15 +260,15 @@ def skill_install(local: bool = False, global_: bool = False) -> bool:
         True if successful
     """
     if local:
-        skill_dir = Path.cwd() / ".claude" / "skills"
+        skill_dir = Path.cwd() / ".claude" / "skills" / "imgcat"
     elif global_:
-        skill_dir = Path.home() / ".claude" / "skills"
+        skill_dir = Path.home() / ".claude" / "skills" / "imgcat"
     else:
         print("Error: Specify --local or --global", file=sys.stderr)
         return False
 
     skill_dir.mkdir(parents=True, exist_ok=True)
-    skill_file = skill_dir / "imgcat.md"
+    skill_file = skill_dir / "SKILL.md"
     skill_file.write_text(SKILL_CONTENT)
     print(f"Installed skill to: {skill_file}")
     return True

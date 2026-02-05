@@ -34,8 +34,8 @@ def auto_contrast(bitmap: NDArray[np.floating]) -> NDArray[np.floating]:
         >>> stretched.min(), stretched.max()
         (0.0, 1.0)
     """
-    min_val = bitmap.min()
-    max_val = bitmap.max()
+    min_val = np.amin(bitmap)
+    max_val = np.amax(bitmap)
 
     if max_val - min_val < 1e-6:
         # Avoid division by zero for constant images

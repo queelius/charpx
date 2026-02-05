@@ -135,10 +135,12 @@ def auto_renderer(
     """Get the best renderer for the current terminal.
 
     Auto-detects terminal capabilities and returns the most suitable renderer:
-    - Kitty/Ghostty → kitty renderer (true pixel)
-    - Sixel terminals → sixel renderer (true pixel)
-    - Color terminals → quadrants renderer
+    - Color terminals → sextants renderer (safe, high-resolution)
     - Monochrome/plain → braille or ascii
+
+    Pixel protocols (kitty, sixel) are available but not auto-selected
+    because they require specific terminal support and break in many
+    contexts (tmux, screen, CI, piped output). Use them explicitly.
 
     Args:
         prefer_color: If True, prefer color-capable renderers (default: True).
@@ -152,13 +154,11 @@ def auto_renderer(
         >>> canvas = Canvas.from_pil(image)
         >>> canvas.out(auto_renderer())
     """
-    from dapple.renderers import ascii, braille, kitty, quadrants, sixel
+    from dapple.renderers import ascii, braille, sextants
 
     # Plain mode - use ASCII for maximum compatibility
     if plain:
         return ascii
-
-    info = detect_terminal()
 
     # Check if we're outputting to a pipe/file
     import sys
@@ -166,18 +166,12 @@ def auto_renderer(
         # Output is being piped - use safe fallback
         return braille if prefer_color else ascii
 
-    # Select renderer based on protocol
-    if info.protocol == Protocol.KITTY:
-        return kitty
-    elif info.protocol == Protocol.SIXEL:
-        return sixel
-    elif info.protocol == Protocol.QUADRANTS:
-        if prefer_color and info.color_support:
-            return quadrants
-        else:
-            return braille
+    # Sextants: safe, high-resolution, works in every terminal
+    info = detect_terminal()
+    if prefer_color and info.color_support:
+        return sextants
     else:
-        return ascii
+        return braille
 
 
 # Convenience function for common use case

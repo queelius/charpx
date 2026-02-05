@@ -200,12 +200,12 @@ class QuadrantsRenderer:
         )
 
         # Min/max per block for fg/bg
-        fg = block_data.max(axis=2)
-        bg = block_data.min(axis=2)
+        fg = np.amax(block_data, axis=2)
+        bg = np.amin(block_data, axis=2)
 
         # Threshold at midpoint, compute pattern
         thresh = ((fg + bg) / 2)[:, :, np.newaxis]
-        patterns = ((block_data > thresh).astype(np.uint8) * _BITS).sum(axis=2)
+        patterns = np.sum((block_data > thresh).astype(np.uint8) * _BITS, axis=2)
 
         # Uniform blocks -> full block
         uniform = (fg - bg) < _UNIFORM_THRESHOLD
@@ -252,14 +252,14 @@ class QuadrantsRenderer:
         )
 
         # Min/max luminance for thresholding
-        fg_lum = lum.max(axis=2)
-        bg_lum = lum.min(axis=2)
+        fg_lum = np.amax(lum, axis=2)
+        bg_lum = np.amin(lum, axis=2)
         fg_idx = lum.argmax(axis=2)
         bg_idx = lum.argmin(axis=2)
 
         # Pattern from lum > threshold
         thresh = ((fg_lum + bg_lum) / 2)[:, :, np.newaxis]
-        patterns = ((lum > thresh).astype(np.uint8) * _BITS).sum(axis=2)
+        patterns = np.sum((lum > thresh).astype(np.uint8) * _BITS, axis=2)
 
         # Uniform blocks -> full block
         uniform = (fg_lum - bg_lum) < _UNIFORM_THRESHOLD
@@ -271,8 +271,8 @@ class QuadrantsRenderer:
         bg_colors = block_data[y_idx, x_idx, bg_idx]
 
         # Uniform blocks use mean color
-        if uniform.any():
-            mean_colors = block_data[uniform].mean(axis=1)
+        if np.any(uniform):
+            mean_colors = np.mean(block_data[uniform], axis=1)
             fg_colors[uniform] = mean_colors
             bg_colors[uniform] = mean_colors
 
