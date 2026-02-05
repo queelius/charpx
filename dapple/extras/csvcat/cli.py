@@ -25,9 +25,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "file",
-        nargs="?",
-        help="CSV/TSV file to display (reads stdin if omitted)",
+        "files",
+        nargs="*",
+        help="CSV/TSV file(s) to display (reads stdin if omitted)",
     )
 
     # Table mode options
@@ -130,14 +130,30 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _get_input(args: argparse.Namespace):
-    """Open the input source (file or stdin)."""
-    if args.file:
-        return open(args.file, "r")
-    if not sys.stdin.isatty():
-        return sys.stdin
-    print("csvcat: no input (provide a file or pipe data via stdin)", file=sys.stderr)
-    sys.exit(1)
+from pathlib import Path
+from typing import Iterator
+
+
+def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, any, str | None]]:
+    """Yield (name, file_handle, error) tuples for each input source.
+
+    If error is not None, file_handle will be None and error contains the message.
+    """
+    if args.files:
+        for path in args.files:
+            path_obj = Path(path)
+            if not path_obj.exists():
+                yield (str(path), None, f"{path}: File not found")
+            else:
+                try:
+                    yield (str(path), open(path, "r"), None)
+                except Exception as e:
+                    yield (str(path), None, f"{path}: {e}")
+    elif not sys.stdin.isatty():
+        yield ("<stdin>", sys.stdin, None)
+    else:
+        print("csvcat: no input (provide a file or pipe data via stdin)", file=sys.stderr)
+        sys.exit(1)
 
 
 def _is_plot_mode(args: argparse.Namespace) -> bool:
@@ -212,21 +228,53 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    source = _get_input(args)
-    try:
-        data = read_csv(
-            source,
-            delimiter=args.delimiter,
-            has_header=not args.no_header,
-        )
-    finally:
-        if source is not sys.stdin:
-            source.close()
+    errors: list[str] = []
+    exit_code = 0
+    first_file = True
 
-    if _is_plot_mode(args):
-        _run_plot_mode(data, args)
-    else:
-        _run_table_mode(data, args)
+    try:
+        for name, source, error in _get_inputs(args):
+            if error:
+                errors.append(error)
+                continue
+
+            try:
+                data = read_csv(
+                    source,
+                    delimiter=args.delimiter,
+                    has_header=not args.no_header,
+                )
+
+                # Print separator for multiple files
+                if args.files and len(args.files) > 1:
+                    if not first_file:
+                        print()  # Blank line between files
+                    print(f"{'='*60}")
+                    print(f"  {name}")
+                    print(f"{'='*60}")
+                    print()
+                    first_file = False
+
+                if _is_plot_mode(args):
+                    _run_plot_mode(data, args)
+                else:
+                    _run_table_mode(data, args)
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+                continue
+            finally:
+                if source is not sys.stdin:
+                    source.close()
+    except KeyboardInterrupt:
+        exit_code = 130
+
+    if errors:
+        for err in errors:
+            print(f"Error: {err}", file=sys.stderr)
+        exit_code = 1
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":

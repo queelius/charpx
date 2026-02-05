@@ -36,6 +36,10 @@ SAFE_NAMESPACE = {
     'pi': np.pi, 'e': np.e,
 }
 
+# Default x range for function plots (-2π to 2π)
+DEFAULT_X_MIN = -2 * np.pi
+DEFAULT_X_MAX = 2 * np.pi
+
 # Default t range for parametric plots (0 to 2π)
 DEFAULT_T_MIN = 0.0
 DEFAULT_T_MAX = 2 * np.pi
@@ -363,7 +367,10 @@ def render_all(
                     all_y_min = min(all_y_min, ey_min)
                     all_y_max = max(all_y_max, ey_max)
                 else:
-                    ey_min, ey_max = compute_y_range(expr_cfg['expr'], x_min, x_max, samples)
+                    # For non-parametric, use default x range if not specified
+                    x_lo = x_min if x_min is not None else DEFAULT_X_MIN
+                    x_hi = x_max if x_max is not None else DEFAULT_X_MAX
+                    ey_min, ey_max = compute_y_range(expr_cfg['expr'], x_lo, x_hi, samples)
                     all_y_min = min(all_y_min, ey_min)
                     all_y_max = max(all_y_max, ey_max)
             except ValueError:
@@ -487,7 +494,7 @@ def main():
                'Parametric curves: funcat -p "cos(t),sin(t)" -l\n'
                'For expressions starting with -, use: funcat -- "-2*x"',
     )
-    parser.add_argument('expression', nargs='?', help='Function of x (e.g., "sin(x)", "x**2")')
+    parser.add_argument('expressions', nargs='*', help='Function(s) of x (e.g., "sin(x)", "x**2")')
     parser.add_argument('-p', '--parametric', type=str, metavar='X,Y',
                         help='Parametric function: "x(t),y(t)"')
     parser.add_argument('--xmin', type=float, default=-2*np.pi, help='X-axis minimum')
@@ -497,7 +504,7 @@ def main():
     parser.add_argument('--tmin', type=float, default=DEFAULT_T_MIN,
                         help=f'Parameter t minimum (default: {DEFAULT_T_MIN})')
     parser.add_argument('--tmax', type=float, default=DEFAULT_T_MAX,
-                        help=f'Parameter t maximum (default: 2π)')
+                        help='Parameter t maximum (default: 2π)')
     parser.add_argument('--font-aspect', type=float, default=DEFAULT_FONT_ASPECT,
                         help=f'Terminal font aspect ratio (height/width, default: {DEFAULT_FONT_ASPECT})')
     parser.add_argument('-w', '--width', type=int, help='Width in characters')
@@ -517,13 +524,38 @@ def main():
     # Use parse_known_args to handle expressions starting with -
     args, remaining = parser.parse_known_args()
 
-    # If expression not captured and there are remaining args, use them
-    if args.expression is None and remaining:
-        args.expression = remaining[0]
+    # Collect all expressions from args.expressions and remaining
+    all_expressions: list[str] = []
+    if args.expressions:
+        all_expressions.extend(args.expressions)
+    if remaining:
+        all_expressions.extend(remaining)
 
-    # Require either expression or --parametric
-    if args.expression is None and args.parametric is None:
-        parser.error('either expression or -p/--parametric is required')
+    # Track if we read stdin content (to avoid double-reading)
+    stdin_content: str | None = None
+    stdin_is_json = False
+
+    # Read from stdin if no expressions provided and stdin has data
+    if not all_expressions and args.parametric is None and not sys.stdin.isatty():
+        try:
+            stdin_content = sys.stdin.read()
+            # Check if it's JSON (for chaining mode)
+            stripped = stdin_content.strip()
+            if stripped.startswith('{'):
+                stdin_is_json = True
+            else:
+                # Treat as newline-separated expressions
+                for line in stripped.split('\n'):
+                    line = line.strip()
+                    if line:
+                        all_expressions.append(line)
+        except OSError:
+            # Can happen in test environments where stdin is captured
+            pass
+
+    # Require either expression(s) or --parametric (unless stdin was JSON for chaining)
+    if not all_expressions and args.parametric is None and not stdin_is_json:
+        parser.error('either expression(s) or -p/--parametric is required')
 
     # Auto-detect terminal size
     term = shutil.get_terminal_size(fallback=(80, 24))
@@ -537,8 +569,16 @@ def main():
     pixel_width = char_width * renderer.cell_width
     pixel_height = char_height * renderer.cell_height
 
-    # Try to read existing state from stdin
-    prev_state = read_json_input()
+    # Try to read existing state from stdin (use cached content if available)
+    prev_state = None
+    if stdin_is_json and stdin_content:
+        try:
+            prev_state = json.loads(stdin_content)
+        except json.JSONDecodeError:
+            pass
+    elif not stdin_content:
+        # Only try reading stdin if we haven't already consumed it
+        prev_state = read_json_input()
 
     # Track if x range was explicitly specified (not default)
     x_range_explicit = args.xmin != -2*np.pi or args.xmax != 2*np.pi
@@ -576,7 +616,7 @@ def main():
             y_min = args.ymin
             y_max = args.ymax
 
-        # Add current expression with config
+        # Add current expression(s) with config
         if args.parametric:
             expressions.append({
                 'expr': args.parametric,
@@ -586,10 +626,11 @@ def main():
                 't_min': args.tmin,
                 't_max': args.tmax,
             })
-        elif args.expression:
+        # Add all expressions from command line
+        for expr in all_expressions:
             expressions.append({
-                'expr': args.expression,
-                'color': args.color,
+                'expr': expr,
+                'color': args.color if len(all_expressions) == 1 else None,  # Use specified color only for single expr
                 'samples': args.samples,
                 'parametric': False,
             })

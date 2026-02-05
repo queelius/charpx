@@ -150,7 +150,7 @@ def parse_frames(frames_str: str, total_frames: int) -> list[int]:
     Returns:
         List of 0-indexed frame numbers
     """
-    result = []
+    result: list[int] = []
 
     for part in frames_str.split(","):
         part = part.strip()
@@ -162,14 +162,14 @@ def parse_frames(frames_str: str, total_frames: int) -> list[int]:
                 result.extend(range(0, min(end, total_frames)))
             elif part.endswith("-"):
                 # 100- means frame 100 onwards
-                start = int(part[:-1]) - 1  # Convert to 0-indexed
-                result.extend(range(max(0, start), total_frames))
+                start_idx = int(part[:-1]) - 1  # Convert to 0-indexed
+                result.extend(range(max(0, start_idx), total_frames))
             else:
                 # 1-10 means frames 1 through 10
-                start, end = part.split("-")
-                start = int(start) - 1  # Convert to 0-indexed
-                end = int(end)
-                result.extend(range(max(0, start), min(end, total_frames)))
+                start_str, end_str = part.split("-")
+                start_idx = int(start_str) - 1  # Convert to 0-indexed
+                end_idx = int(end_str)
+                result.extend(range(max(0, start_idx), min(end_idx, total_frames)))
         else:
             # Single frame number
             frame = int(part) - 1  # Convert to 0-indexed
@@ -556,7 +556,7 @@ def main() -> None:
     )
 
     parser.add_argument(
-        "video", type=Path, nargs="?", help="Video file to display"
+        "videos", type=Path, nargs="*", help="Video file(s) to display"
     )
     parser.add_argument(
         "-r", "--renderer",
@@ -656,66 +656,88 @@ def main() -> None:
         sys.exit(0 if success else 1)
 
     # Main command
-    if not args.video:
+    if not args.videos:
         parser.print_help()
         sys.exit(1)
 
-    if not args.video.exists():
-        print(f"Error: File not found: {args.video}", file=sys.stderr)
-        sys.exit(1)
+    # Determine output destination
+    if args.output:
+        dest = open(args.output, "w", encoding="utf-8")
+    else:
+        dest = sys.stdout
 
+    errors: list[str] = []
+    exit_code = 0
     try:
-        # Asciinema export
-        if args.asciinema:
-            to_asciinema(
-                args.video,
-                args.asciinema,
-                fps=args.fps,
-                renderer=args.renderer,
-                width=args.width,
-                height=args.height,
-                dither=args.dither,
-                contrast=args.contrast,
-                invert=args.invert,
-                grayscale=args.grayscale,
-                no_color=args.no_color,
-                max_frames=args.max_frames,
-                title=args.title,
-            )
-            return
+        for video_path in args.videos:
+            if not video_path.exists():
+                errors.append(f"{video_path}: File not found")
+                continue
 
-        # Normal output
-        from contextlib import nullcontext
+            # Asciinema export (only makes sense for single video)
+            if args.asciinema:
+                if len(args.videos) > 1:
+                    errors.append("--asciinema only supports a single video file")
+                    break
+                try:
+                    to_asciinema(
+                        video_path,
+                        args.asciinema,
+                        fps=args.fps,
+                        renderer=args.renderer,
+                        width=args.width,
+                        height=args.height,
+                        dither=args.dither,
+                        contrast=args.contrast,
+                        invert=args.invert,
+                        grayscale=args.grayscale,
+                        no_color=args.no_color,
+                        max_frames=args.max_frames,
+                        title=args.title,
+                    )
+                except Exception as e:
+                    errors.append(f"{video_path}: {e}")
+                continue
 
-        dest_ctx = (
-            open(args.output, "w", encoding="utf-8")
-            if args.output
-            else nullcontext(sys.stdout)
-        )
+            # Print separator for multiple videos
+            if len(args.videos) > 1:
+                dest.write(f"\n{'='*60}\n")
+                dest.write(f"  {video_path.name}\n")
+                dest.write(f"{'='*60}\n\n")
 
-        with dest_ctx as dest:
-            vidcat(
-                args.video,
-                renderer=args.renderer,
-                width=args.width,
-                height=args.height,
-                dither=args.dither,
-                contrast=args.contrast,
-                invert=args.invert,
-                grayscale=args.grayscale,
-                no_color=args.no_color,
-                max_frames=args.max_frames,
-                frames=args.frames,
-                every=args.every,
-                dest=dest,
-                frame_delay=args.delay,
-            )
-
-    except RuntimeError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+            try:
+                vidcat(
+                    video_path,
+                    renderer=args.renderer,
+                    width=args.width,
+                    height=args.height,
+                    dither=args.dither,
+                    contrast=args.contrast,
+                    invert=args.invert,
+                    grayscale=args.grayscale,
+                    no_color=args.no_color,
+                    max_frames=args.max_frames,
+                    frames=args.frames,
+                    every=args.every,
+                    dest=dest,
+                    frame_delay=args.delay,
+                )
+            except Exception as e:
+                errors.append(f"{video_path}: {e}")
+                continue
     except KeyboardInterrupt:
-        sys.exit(130)
+        exit_code = 130
+    finally:
+        if args.output:
+            dest.close()
+
+    if errors:
+        for err in errors:
+            print(f"Error: {err}", file=sys.stderr)
+        exit_code = 1
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":

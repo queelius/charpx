@@ -9,7 +9,6 @@ from __future__ import annotations
 import hashlib
 import shutil
 import sys
-import tempfile
 import urllib.error
 import urllib.request
 from contextlib import contextmanager
@@ -180,7 +179,7 @@ class DappleImageItem(ImageItem):
             return
 
         try:
-            pil_img = Image.open(local_path)
+            pil_img: Image.Image = Image.open(local_path)
 
             # Resize to fit width
             pixel_width = self._image_width * self._renderer.cell_width
@@ -436,7 +435,7 @@ def main() -> None:
         description="Display markdown files in the terminal with inline images",
     )
 
-    parser.add_argument("file", type=Path, nargs="?", help="Markdown file to display")
+    parser.add_argument("files", type=Path, nargs="*", help="Markdown file(s) to display")
     parser.add_argument(
         "-r",
         "--renderer",
@@ -471,12 +470,8 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if not args.file:
+    if not args.files:
         parser.print_help()
-        sys.exit(1)
-
-    if not args.file.exists():
-        print(f"Error: File not found: {args.file}", file=sys.stderr)
         sys.exit(1)
 
     # Determine output destination
@@ -485,22 +480,49 @@ def main() -> None:
     else:
         dest = None  # Use stdout via console
 
+    errors: list[str] = []
+    exit_code = 0
     try:
-        mdcat(
-            args.file,
-            renderer=args.renderer,
-            width=args.width,
-            image_width=args.image_width,
-            render_images=not args.no_images,
-            code_theme=args.code_theme,
-            hyperlinks=not args.no_hyperlinks,
-            dest=dest,
-        )
+        for file_path in args.files:
+            if not file_path.exists():
+                errors.append(f"{file_path}: File not found")
+                continue
+
+            # Print separator for multiple files
+            if len(args.files) > 1:
+                separator = f"\n{'='*60}\n  {file_path.name}\n{'='*60}\n"
+                if dest:
+                    dest.write(separator)
+                else:
+                    print(separator)
+
+            try:
+                mdcat(
+                    file_path,
+                    renderer=args.renderer,
+                    width=args.width,
+                    image_width=args.image_width,
+                    render_images=not args.no_images,
+                    code_theme=args.code_theme,
+                    hyperlinks=not args.no_hyperlinks,
+                    dest=dest,
+                )
+            except Exception as e:
+                errors.append(f"{file_path}: {e}")
+                continue
     except KeyboardInterrupt:
-        sys.exit(130)
+        exit_code = 130
     finally:
         if dest:
             dest.close()
+
+    if errors:
+        for err in errors:
+            print(f"Error: {err}", file=sys.stderr)
+        exit_code = 1
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":

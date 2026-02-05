@@ -23,9 +23,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "file",
-        nargs="?",
-        help="JSON/JSONL file to display (reads stdin if omitted)",
+        "files",
+        nargs="*",
+        help="JSON/JSONL file(s) to display (reads stdin if omitted)",
     )
     parser.add_argument(
         "query",
@@ -130,15 +130,31 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _get_input(args: argparse.Namespace) -> str:
-    """Read input text from file or stdin."""
-    if args.file:
-        with open(args.file, "r") as f:
-            return f.read()
-    if not sys.stdin.isatty():
-        return sys.stdin.read()
-    print("datacat: no input (provide a file or pipe data via stdin)", file=sys.stderr)
-    sys.exit(1)
+from pathlib import Path
+from typing import Iterator
+
+
+def _get_inputs(args: argparse.Namespace) -> Iterator[tuple[str, str | None, str | None]]:
+    """Yield (name, text_content, error) tuples for each input source.
+
+    If error is not None, text_content will be None and error contains the message.
+    """
+    if args.files:
+        for path in args.files:
+            path_obj = Path(path)
+            if not path_obj.exists():
+                yield (str(path), None, f"{path}: File not found")
+            else:
+                try:
+                    with open(path, "r") as f:
+                        yield (str(path), f.read(), None)
+                except Exception as e:
+                    yield (str(path), None, f"{path}: {e}")
+    elif not sys.stdin.isatty():
+        yield ("<stdin>", sys.stdin.read(), None)
+    else:
+        print("datacat: no input (provide a file or pipe data via stdin)", file=sys.stderr)
+        sys.exit(1)
 
 
 def _is_plot_mode(args: argparse.Namespace) -> bool:
@@ -324,18 +340,46 @@ def main() -> None:
     parser = _build_parser()
     args = parser.parse_args()
 
-    text = _get_input(args)
+    errors: list[str] = []
+    exit_code = 0
+    first_file = True
 
     try:
-        data = read_json(text)
-    except Exception as e:
-        print(f"datacat: parse error: {e}", file=sys.stderr)
-        sys.exit(1)
+        for name, text, error in _get_inputs(args):
+            if error:
+                errors.append(error)
+                continue
 
-    if _is_plot_mode(args):
-        _run_plot_mode(data, args)
-    else:
-        _run_display_mode(data, args)
+            try:
+                data = read_json(text)
+
+                # Print separator for multiple files
+                if args.files and len(args.files) > 1:
+                    if not first_file:
+                        print()  # Blank line between files
+                    print(f"{'='*60}")
+                    print(f"  {name}")
+                    print(f"{'='*60}")
+                    print()
+                    first_file = False
+
+                if _is_plot_mode(args):
+                    _run_plot_mode(data, args)
+                else:
+                    _run_display_mode(data, args)
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+                continue
+    except KeyboardInterrupt:
+        exit_code = 130
+
+    if errors:
+        for err in errors:
+            print(f"Error: {err}", file=sys.stderr)
+        exit_code = 1
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":
