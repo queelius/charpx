@@ -26,7 +26,7 @@ def detect_format(text: str) -> str:
     if not stripped:
         return "json"
 
-    lines = [l.strip() for l in stripped.split("\n") if l.strip()]
+    lines = [line.strip() for line in stripped.split("\n") if line.strip()]
     if len(lines) <= 1:
         return "json"
 

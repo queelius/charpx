@@ -80,9 +80,11 @@ class CairoAdapter:
         data = surface.get_data()
         stride = surface.get_stride()
 
+        from dapple.color import luminance
+
         if fmt == cairo.FORMAT_ARGB32:
             # ARGB32: 4 bytes per pixel (BGRA in memory on little-endian)
-            arr = np.ndarray(
+            arr: np.ndarray = np.ndarray(
                 shape=(height, stride // 4, 4),
                 dtype=np.uint8,
                 buffer=data,
@@ -94,8 +96,6 @@ class CairoAdapter:
             r = arr[:, :, 2].astype(np.float32) / 255.0
 
             colors = np.stack([r, g, b], axis=2)
-            from dapple.color import luminance
-
             bitmap = luminance(colors)
 
             return Canvas(bitmap, colors=colors, renderer=self._renderer)

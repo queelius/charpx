@@ -7,7 +7,6 @@ capabilities (kitty, sixel, etc.) and falls back to character-based renderers.
 from __future__ import annotations
 
 import os
-import shutil
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -114,11 +113,7 @@ def detect_terminal() -> TerminalInfo:
     color_support = detect_color_support()
 
     # Get terminal name for debugging
-    terminal_name = (
-        os.environ.get("TERM_PROGRAM") or
-        os.environ.get("TERM") or
-        None
-    )
+    terminal_name = os.environ.get("TERM_PROGRAM") or os.environ.get("TERM")
 
     return TerminalInfo(
         protocol=protocol,
@@ -170,8 +165,7 @@ def auto_renderer(
     info = detect_terminal()
     if prefer_color and info.color_support:
         return sextants
-    else:
-        return braille
+    return braille
 
 
 # Convenience function for common use case

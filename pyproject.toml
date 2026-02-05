@@ -91,3 +91,18 @@ exclude_lines = [
     "raise NotImplementedError",
     "@abstractmethod",
 ]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]  # Line too long (handled by formatter)
+
+[tool.ruff.lint.per-file-ignores]
+# Allow late imports in __init__.py files (lazy loading pattern)
+"dapple/adapters/__init__.py" = ["E402"]
+"dapple/renderers/__init__.py" = ["E402"]
+# Allow late imports in renderers that check for ANSI support
+"dapple/renderers/quadrants.py" = ["E402"]
+"dapple/renderers/sextants.py" = ["E402"]

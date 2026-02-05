@@ -67,21 +67,20 @@ def get_renderer(
     if renderer is None:
         raise ValueError(f"Unknown renderer: {name}")
 
+    # Apply color configuration based on renderer type
     if name == "braille":
         if no_color:
-            renderer = braille(color_mode="none")
-        elif grayscale:
-            renderer = braille(color_mode="grayscale")
-        else:
-            renderer = braille(color_mode="truecolor")
-    elif name in ("quadrants", "sextants"):
+            return braille(color_mode="none")
         if grayscale:
-            if name == "quadrants":
-                renderer = quadrants(grayscale=True)
-            else:
-                renderer = sextants(grayscale=True)
+            return braille(color_mode="grayscale")
+        return braille(color_mode="truecolor")
 
-    return renderer
+    if grayscale and name in ("quadrants", "sextants"):
+        if name == "quadrants":
+            return quadrants(grayscale=True)
+        return sextants(grayscale=True)
+
+    return renderer  # type: ignore[return-value]
 
 
 def apply_preprocessing(

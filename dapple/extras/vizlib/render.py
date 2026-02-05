@@ -34,11 +34,14 @@ def get_renderer(name: str) -> Renderer:
         valid = ", ".join(sorted(RENDERERS.keys()))
         raise ValueError(f"Unknown renderer: {name}. Available: {valid}")
 
+    # Renderers are frozen dataclasses with __call__ returning new instances
     if name == "braille":
-        return renderer(threshold=0.2, color_mode="truecolor")
-    elif name in ("quadrants", "sextants"):
-        return renderer(true_color=True)
-    return renderer()
+        return braille(threshold=0.2, color_mode="truecolor")
+    elif name == "quadrants":
+        return quadrants(true_color=True)
+    elif name == "sextants":
+        return sextants(true_color=True)
+    return renderer
 
 
 def get_terminal_size() -> tuple[int, int]:

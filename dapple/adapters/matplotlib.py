@@ -108,9 +108,10 @@ class MatplotlibAdapter:
         except ImportError:
             # Fallback without PIL - use matplotlib's internal rendering
             fig.canvas.draw()
-            data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+            # buffer_rgba is the modern API (tostring_rgb was deprecated)
+            buf_rgba = np.asarray(fig.canvas.buffer_rgba())  # type: ignore[attr-defined]
             w, h = fig.canvas.get_width_height()
-            colors = data.reshape((h, w, 3)).astype(np.float32) / 255.0
+            colors = buf_rgba[:, :, :3].astype(np.float32) / 255.0
 
         from dapple.color import luminance
 

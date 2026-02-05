@@ -8,7 +8,6 @@ dapple renderer — braille, sextants, sixel, kitty, etc.
 
 from __future__ import annotations
 
-from collections import Counter
 from typing import Sequence
 
 import numpy as np

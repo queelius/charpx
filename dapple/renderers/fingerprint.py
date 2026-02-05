@@ -7,7 +7,7 @@ bitmaps and finds the best match for each input region.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, TextIO
 
 import numpy as np
@@ -34,7 +34,7 @@ GLYPH_SETS = {
 
 # Build extended set
 GLYPH_SETS["extended"] = (
-    GLYPH_SETS["basic"] + GLYPH_SETS["blocks"] + GLYPH_SETS["braille"]
+    (GLYPH_SETS["basic"] or "") + (GLYPH_SETS["blocks"] or "") + (GLYPH_SETS["braille"] or "")
 )
 
 
@@ -70,6 +70,7 @@ def _render_glyph_bitmap(
     draw = ImageDraw.Draw(img)
 
     # Load font
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont
     if font_path:
         font = ImageFont.truetype(font_path, size=height - 2)
     else:

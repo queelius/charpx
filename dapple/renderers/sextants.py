@@ -49,27 +49,23 @@ def _build_sextant_table() -> list[str]:
     Returns:
         64-character list indexed by pattern value.
     """
-    # Special patterns that use existing block characters
-    special = {
-        0: " ",   # Empty
-        21: "▌",  # Left half (32+8+2 = cells 0,2,4 but wait...)
-        42: "▐",  # Right half
-        63: "█",  # Full block
-    }
-
-    # Hmm, let me recalculate. In Unicode sextant naming:
-    # Cells are numbered 1-6 (1-indexed), pattern = sum of 2^(cell-1)
-    # Cell 1=top-left, 2=top-right, 3=mid-left, 4=mid-right, 5=bot-left, 6=bot-right
-    # Left half = cells 1,3,5 = 2^0 + 2^2 + 2^4 = 1+4+16 = 21
-    # Right half = cells 2,4,6 = 2^1 + 2^3 + 2^5 = 2+8+32 = 42
-
-    # But my bit layout uses 0-indexed cells with weights [32,16,8,4,2,1]
-    # Cell 0=top-left(bit5), 1=top-right(bit4), 2=mid-left(bit3), 3=mid-right(bit2), 4=bot-left(bit1), 5=bot-right(bit0)
-    # Left half in my encoding = cells 0,2,4 = 32+8+2 = 42
-    # Right half in my encoding = cells 1,3,5 = 16+4+1 = 21
-
-    # So I need to map between my encoding and Unicode's encoding
-    # My pattern -> Unicode pattern requires bit reversal/remapping
+    # Unicode sextant encoding:
+    # - Cells are numbered 1-6 (1-indexed), pattern = sum of 2^(cell-1)
+    # - Cell 1=top-left, 2=top-right, 3=mid-left, 4=mid-right, 5=bot-left, 6=bot-right
+    # - Left half = cells 1,3,5 = 2^0 + 2^2 + 2^4 = 1+4+16 = 21
+    # - Right half = cells 2,4,6 = 2^1 + 2^3 + 2^5 = 2+8+32 = 42
+    #
+    # Internal encoding uses 0-indexed cells with weights [32,16,8,4,2,1]:
+    # - Cell 0=top-left(bit5), 1=top-right(bit4), 2=mid-left(bit3),
+    #   3=mid-right(bit2), 4=bot-left(bit1), 5=bot-right(bit0)
+    # - Left half in internal encoding = cells 0,2,4 = 32+8+2 = 42
+    # - Right half in internal encoding = cells 1,3,5 = 16+4+1 = 21
+    #
+    # Special patterns that use existing block characters instead of sextants:
+    # - Pattern 0 (empty) -> space
+    # - Pattern 21 (left half) -> "▌" (U+258C)
+    # - Pattern 42 (right half) -> "▐" (U+2590)
+    # - Pattern 63 (full) -> "█" (U+2588)
 
     table = []
     for my_pattern in range(64):

@@ -122,8 +122,15 @@ def imgcat(
     canvas = load_image(path, width=pixel_width, height=pixel_height)
 
     # Correct aspect ratio for character-based renderers
-    TERMINAL_CELL_RATIO = 0.5
-    if renderer not in ("sixel", "kitty", "auto"):
+    # Pixel renderers (sixel, kitty) don't need aspect correction
+    needs_aspect_correction = renderer not in ("sixel", "kitty")
+    if renderer == "auto":
+        from dapple.auto import detect_terminal, Protocol
+        info = detect_terminal()
+        needs_aspect_correction = info.protocol not in (Protocol.KITTY, Protocol.SIXEL)
+
+    if needs_aspect_correction:
+        TERMINAL_CELL_RATIO = 0.5
         cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
         pil_img = canvas.to_pil()
         w, h = pil_img.size
@@ -131,18 +138,6 @@ def imgcat(
         if new_h > 0:
             pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
             canvas = from_pil(pil_img)
-    elif renderer == "auto":
-        # For auto, we need to check the actual renderer type
-        from dapple.auto import detect_terminal, Protocol
-        info = detect_terminal()
-        if info.protocol not in (Protocol.KITTY, Protocol.SIXEL):
-            cell_aspect = (rend.cell_height / rend.cell_width) * TERMINAL_CELL_RATIO
-            pil_img = canvas.to_pil()
-            w, h = pil_img.size
-            new_h = int(h * cell_aspect)
-            if new_h > 0:
-                pil_img = pil_img.resize((w, new_h), Image.Resampling.LANCZOS)
-                canvas = from_pil(pil_img)
 
     # Apply preprocessing
     if contrast or dither or invert:
@@ -152,7 +147,7 @@ def imgcat(
         canvas = Canvas(bitmap, colors=canvas.colors)
 
     # Output
-    output = dest if dest is not None else sys.stdout
+    output = dest or sys.stdout
     colors_to_use = None if no_color else canvas._colors
     rend.render(canvas._bitmap, colors_to_use, dest=output)
     output.write("\n")
@@ -361,37 +356,52 @@ def main() -> None:
         sys.exit(1)
 
     # Determine output destination
+    dest: TextIO
     if args.output:
         dest = open(args.output, "w", encoding="utf-8")
     else:
         dest = sys.stdout
 
+    errors: list[str] = []
+    exit_code = 0
     try:
         for image_path in args.images:
             if not image_path.exists():
-                print(f"Error: File not found: {image_path}", file=sys.stderr)
-                sys.exit(1)
+                errors.append(f"{image_path}: File not found")
+                continue
 
-            imgcat(
-                image_path,
-                renderer=args.renderer,
-                width=args.width,
-                height=args.height,
-                dither=args.dither,
-                contrast=args.contrast,
-                invert=args.invert,
-                grayscale=args.grayscale,
-                no_color=args.no_color,
-                dest=dest,
-            )
+            try:
+                imgcat(
+                    image_path,
+                    renderer=args.renderer,
+                    width=args.width,
+                    height=args.height,
+                    dither=args.dither,
+                    contrast=args.contrast,
+                    invert=args.invert,
+                    grayscale=args.grayscale,
+                    no_color=args.no_color,
+                    dest=dest,
+                )
+            except Exception as e:
+                errors.append(f"{image_path}: {e}")
+                continue
     except ImportError as e:
         print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        exit_code = 1
     except KeyboardInterrupt:
-        sys.exit(130)
+        exit_code = 130
     finally:
         if args.output:
             dest.close()
+
+    if errors:
+        for err in errors:
+            print(f"Error: {err}", file=sys.stderr)
+        exit_code = 1  # Any errors means exit 1
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":

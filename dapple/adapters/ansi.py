@@ -341,7 +341,7 @@ def detect_format(text: str) -> Literal["braille", "quadrants", "sextants", "asc
             ascii_count += 1
 
     # Determine dominant format
-    counts = {
+    counts: dict[Literal["braille", "quadrants", "sextants", "ascii"], int] = {
         "braille": braille_count,
         "quadrants": quadrant_count,
         "sextants": sextant_count,
@@ -351,7 +351,14 @@ def detect_format(text: str) -> Literal["braille", "quadrants", "sextants", "asc
     if all(c == 0 for c in counts.values()):
         return None
 
-    return max(counts, key=lambda k: counts[k])
+    # Find key with maximum count
+    best: Literal["braille", "quadrants", "sextants", "ascii"] = "braille"
+    best_count = 0
+    for fmt, count in counts.items():
+        if count > best_count:
+            best = fmt
+            best_count = count
+    return best
 
 
 def from_ansi(

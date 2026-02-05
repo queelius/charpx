@@ -83,13 +83,13 @@ def parse_page_range(page_str: str, total_pages: int) -> list[int]:
     Returns:
         List of 1-indexed page numbers
     """
-    pages = set()
+    pages: set[int] = set()
     for part in page_str.split(","):
         part = part.strip()
         if "-" in part:
-            start, end = part.split("-", 1)
-            start = int(start) if start else 1
-            end = int(end) if end else total_pages
+            start_str, end_str = part.split("-", 1)
+            start = int(start_str) if start_str else 1
+            end = int(end_str) if end_str else total_pages
             pages.update(range(start, min(end, total_pages) + 1))
         else:
             page = int(part)
@@ -208,7 +208,7 @@ def pdfcat(
 
     try:
         from PIL import Image
-        from dapple.adapters.pil import from_pil, load_image
+        from dapple.adapters.pil import from_pil
     except ImportError:
         print(
             "pdfcat requires pillow. Install with: pip install dapple[pdfcat]",
@@ -269,7 +269,7 @@ def pdfcat(
                 output.write(f"\n## Page {page.number}\n")
 
             # Load page image
-            pil_img = Image.open(page.image_path)
+            pil_img: Image.Image = Image.open(page.image_path)
 
             # For kitty, keep image at original DPI-rendered size
             # The kitty protocol's columns parameter handles display scaling
@@ -428,7 +428,7 @@ def main() -> None:
 
     # Main command arguments
     parser.add_argument(
-        "pdf", type=Path, nargs="?", help="PDF file to display"
+        "pdfs", type=Path, nargs="*", help="PDF file(s) to display"
     )
 
     # Skill management flags
@@ -503,41 +503,64 @@ def main() -> None:
         sys.exit(0 if success else 1)
 
     # Main command
-    if not args.pdf:
+    if not args.pdfs:
         parser.print_help()
         sys.exit(1)
 
-    if not args.pdf.exists():
-        print(f"Error: File not found: {args.pdf}", file=sys.stderr)
-        sys.exit(1)
-
     # Determine output destination
+    dest: TextIO
     if args.output:
         dest = open(args.output, "w", encoding="utf-8")
     else:
         dest = sys.stdout
 
+    errors: list[str] = []
+    exit_code = 0
     try:
-        success = pdfcat(
-            args.pdf,
-            renderer=args.renderer,
-            width=args.width,
-            height=args.height,
-            pages=args.pages,
-            dpi=args.dpi,
-            dither=args.dither,
-            contrast=args.contrast,
-            invert=args.invert,
-            grayscale=args.grayscale,
-            no_color=args.no_color,
-            dest=dest,
-        )
-        sys.exit(0 if success else 1)
+        for pdf_path in args.pdfs:
+            if not pdf_path.exists():
+                errors.append(f"{pdf_path}: File not found")
+                continue
+
+            # Print separator for multiple PDFs
+            if len(args.pdfs) > 1:
+                dest.write(f"\n{'='*60}\n")
+                dest.write(f"  {pdf_path.name}\n")
+                dest.write(f"{'='*60}\n\n")
+
+            try:
+                success = pdfcat(
+                    pdf_path,
+                    renderer=args.renderer,
+                    width=args.width,
+                    height=args.height,
+                    pages=args.pages,
+                    dpi=args.dpi,
+                    dither=args.dither,
+                    contrast=args.contrast,
+                    invert=args.invert,
+                    grayscale=args.grayscale,
+                    no_color=args.no_color,
+                    dest=dest,
+                )
+                if not success:
+                    errors.append(f"{pdf_path}: Failed to render")
+            except Exception as e:
+                errors.append(f"{pdf_path}: {e}")
+                continue
     except KeyboardInterrupt:
-        sys.exit(130)
+        exit_code = 130
     finally:
         if args.output:
             dest.close()
+
+    if errors:
+        for err in errors:
+            print(f"Error: {err}", file=sys.stderr)
+        exit_code = 1
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":
